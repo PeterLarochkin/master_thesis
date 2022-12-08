@@ -1,0 +1,196 @@
+
+
+
+
+Latest 
+ltac_expr	::=	 (ltac_expr4 _ binder_tactic) // <- задать вопрос про такие конструкции
+ltac_expr4	::=	ltac_expr3 ;  (ltac_expr3 _ binder_tactic)
+|	ltac_expr3 ; [ for_each_goal ]	
+|	ltac_expr3	
+ltac_expr3	::=	l3_tactic	
+|	ltac_expr2	
+ltac_expr2	::=	ltac_expr1 +  (ltac_expr2 _ binder_tactic)
+|	ltac_expr1 ||  (ltac_expr2 _ binder_tactic)
+|	l2_tactic	
+|	ltac_expr1	
+ltac_expr1	::=	tactic_value	
+|	qualid tactic_arg+	
+|	l1_tactic	
+|	ltac_expr0	
+tactic_value	::=	 (value_tactic _ syn_value)
+tactic_arg	::=	tactic_value	
+|	term	
+|	()	
+ltac_expr0	::=	( ltac_expr )	
+|	[> for_each_goal ]	
+|	tactic_atom	
+tactic_atom	::=	integer	
+|	qualid	
+|	()
+
+
+binder_tactics are: fun and let
+
+l3_tactics include 
+Ltac tactics: try, do, repeat, timeout, time, progress, once, exactly_once, only and abstract
+
+l2_tactics are: tryif
+
+l1_tactics are the simple_tactics, first, solve, idtac, fail and gfail 
+as well as match, match goal and their lazymatch and multimatch variants.
+
+value_tactics, which return values rather than change the proof state. 
+They are: eval, context, numgoals, fresh, type of and type_term.
+https://www.lirmm.fr/~delahaye/papers/ltac%20(LPAR'00).pdf
+Это тактикалы
+1.tac1;tac2 
+Applies tac1 and tac2 to all the subgoals
+
+2.tac;[tac1|...|taci|...|tacn] 
+Applies tac and taci to the i-th subgoal
+
+3. tac1 Orelse tac2 
+Applies tac1 or tac2 if tac1 fails
+
+4. Do n tac 
+Applies tac n times
+
+5.Repeat tac 
+Applies tac until it fails
+
+6. Try tac 
+Applies tac and does not fail if tac fails
+
+7.First [tac1|...|taci|...|tacn] 
+Apply the taci which does not fail
+
+8. Solve [tac1|...|taci|...|tacn] 
+Apply the taci which solves
+
+9. Idtac 
+Leaves the goal unchanged
+
+10. Fail 
+Always fails
+
+Old but gold BNF of Ltac.
+ltac_expr         ::=  | ltac_expr ; ltac_expr
+                        "Unformal": The expression ltac_expr1 is evaluated to v1, which must be a tactic value. The tactic v1 is applied to the current goal, possibly producing more goals. Then ltac_expr2 is evaluated to produce v2, which must be a tactic value. The tactic v2 is applied to all the goals produced by the prior application. Sequence is associative.
+                        "Formal": [[phi;psi]](g) = {h | h \in G и \exists u : u \in [[phi]](g) и h \in [[psi]](u) }
+
+                       | [> ltac_expr | ... | ltac_expr ]
+                        "Unformal": The expressions ltac_expri are evaluated to vi, for i = 1, ..., n and all have to be tactics. The vi is applied to the i-th goal, for i = 1, ..., n. It fails if the number of focused goals is not exactly n.
+                        "Formal": [[ '[>' phi_1 '|' ... '|' phi_i '|' ... '|' phi_n ']' ]] = λg:G. if length(G) == n then {g_i ∈ G| phi_i g_i} else "fail".
+
+                       //| ltac_expr ; [ ltac_expr | ... | ltac_expr ]
+                       | ltac_expr3
+ltac_expr3        ::=  | do (natural | ident) ltac_expr3
+                        "Unformal": Applies tac n times
+                        "Formal": [[ do (natural | ident) ltac_expr3 ]] = λg:G. ltac_expr3 g ... ltac_expr3 g (n times) 
+
+                       | progress ltac_expr3
+                        "Unformal":The tactic value v is applied to each focused subgoal independently. If the application of v to one of the focused subgoal produced subgoals equal to the initial goals (up to syntactical equality), then an error of level 0 is raised.
+                        "Formal": progress phi := λg. if g=phi g then fail else phi.
+
+                       | repeat ltac_expr3
+                        "Unformal": Applies tac until it fails
+                        "Formal": repeat tac  = λg. if tac g = fail g then g else tac g
+
+                       | try ltac_expr3
+                        "Unformal": Applies tac and does not fail if tac fails 
+                        "Formal": try tac = λg:G. if tac g == fail g then g else tac g. 
+
+                       | once ltac_expr3
+                       | exactly_once ltac_expr3
+                        "HELP"
+
+
+                       
+                       // | timeout (natural | ident) ltac_expr3 (useless apply tac after natural second)
+                       // | time [string] ltac_expr3 (get time of applying tac)
+                       // | only selector: ltac_expr3
+                       | ltac_expr2
+ltac_expr2        ::=  | ltac_expr1 || ltac_expr3
+                        "Unformal":ltac_expr_1 and ltac_expr_2 are evaluated respectively to v1 and v2 which must be tactic values. The tactic value v1 is applied in each subgoal independently and if it fails to progress then v2 is applied. 
+                        "Formal": ltac_expr_1 || ltac_expr_2 = λg:G. if (progress ltac_expr_1) g == fail g then ltac_expr_2 g else ltac_expr_1 g. 
+                       
+                       | ltac_expr1 + ltac_expr3
+                        "Unformal": ltac_expr1 and ltac_expr2 are evaluated respectively to v1 and v2 which must be tactic values. 
+                        The tactic value v1 is applied to each focused goal independently and 
+                        if it fails or a later tactic fails, 
+                        then the proof backtracks to the current goal and v2 is applied. 
+                        "Formal": ltac_expr_1 + ltac_expr_2= λg. if ltac_expr_1 g == fail g then ltac_expr_2 g else ltac_expr_1 g.
+
+                       | tryif ltac_expr1 then ltac_expr1 else ltac_expr1
+                        "Unformal": is a generalization of the biased-branching tactics above. The expression ltac_expr1 is evaluated to v1, which is then applied to each subgoal independently. For each goal where v1 succeeds at least once, ltac_expr2 is evaluated to v2 which is then applied collectively to the generated subgoals. The v2 tactic can trigger backtracking points in v1: where v1 succeeds at least once, tryif ltac_expr1 then ltac_expr2 else ltac_expr3 is equivalent to v1; v2. In each of the goals where v1 does not succeed at least once, ltac_expr3 is evaluated in v3 which is is then applied to the goal.
+                        "Formal": tryif ltac_expr_1 then ltac_expr_2 else ltac_expr_3 = (ltac_expr1;ltac_expr_2) + ltac_expr_3
+                       | ltac_expr1
+ltac_expr1        ::=  | fun name ... name => atom
+                        "Formal": λ ... . [[atom]] 
+
+                       let [rec] let_clause with ... with let_clause in atom
+                        "HELP"
+
+                       match goal with context_rule | ... | context_rule end
+                       match reverse goal with context_rule | ... | context_rule end
+                       match ltac_expr with match_rule | ... | match_rule end
+                       lazymatch goal with context_rule | ... | context_rule end
+                       lazymatch reverse goal with context_rule | ... | context_rule end
+                       lazymatch ltac_expr with match_rule | ... | match_rule end
+                       multimatch goal with context_rule | ... | context_rule end
+                       multimatch reverse goal with context_rule | ... | context_rule end
+                       multimatch ltac_expr with match_rule | ... | match_rule end
+                       
+                       abstract atom
+                       abstract atom using ident
+                       first [ ltac_expr | ... | ltac_expr ]
+                       solve [ ltac_expr | ... | ltac_expr ]
+                       idtac [ message_token ... message_token]
+                       fail [natural] [message_token ... message_token]
+                       gfail [natural] [message_token ... message_token]
+                       fresh [ component … component ]
+                       context ident [term]
+                       eval redexpr in term
+                       type of term
+                       constr : term
+                       uconstr : term
+                       type_term term
+                       numgoals
+                       guard test
+                       assert_fails ltac_expr3
+                       assert_succeeds ltac_expr3
+                       tactic
+                       qualid tacarg ... tacarg
+                       atom
+atom              ::=  qualid
+                       ()
+                       int
+                       ( ltac_expr )
+component         ::=  string | qualid
+message_token     ::=  string | ident | int
+tacarg            ::=  qualid
+                       ()
+                       ltac : atom
+                       term
+let_clause        ::=  ident [name ... name] := ltac_expr
+context_rule      ::=  context_hyp, ..., context_hyp |- cpattern => ltac_expr
+                       cpattern => ltac_expr
+                       |- cpattern => ltac_expr
+                       _ => ltac_expr
+context_hyp       ::=  name : cpattern
+                       name := cpattern [: cpattern]
+match_rule        ::=  cpattern => ltac_expr
+                       context [ident] [ cpattern ] => ltac_expr
+                       _ => ltac_expr
+test              ::=  int = int
+                       int (< | <= | > | >=) int
+selector          ::=  [ident]
+                       int
+                       (int | int - int), ..., (int | int - int)
+toplevel_selector ::=  selector
+                       all
+                       par
+                       !
+top      ::=  [Local] Ltac ltac_def with ... with ltac_def
+ltac_def ::=  ident [ident ... ident] := ltac_expr
+              qualid [ident ... ident] ::= ltac_expr
