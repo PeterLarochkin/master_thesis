@@ -268,7 +268,525 @@ Ltac input a :=
 Goal True.
 idtac "start6".
 input auto.
-
-
 auto.
 Qed.
+
+
+
+Goal P 1 /\ P 2 /\ P 4.
+first [ auto | auto | auto ].
+all:repeat split.
+Qed.
+
+(* 
+"Unformal": Apply the taci which does not fail 
+"Formal": 
+[[first [tac] ]] = λg:{H,G}. [[ tac g ]]
+[[ first [tac1|...|taci|...|tacn] ]] = λg:{H,G}. if tac1 g == fail g then [[first [tac2|...|tacn]]] else tac1 g
+*)
+
+Goal P 1 /\ P 2 /\ P 4.
+split.
+2:split.
+solve [unfold P; auto| fail].
+all:split.
+Qed.
+
+
+(* 
+"Unformal": The ltac_expri are evaluated to vi and vi must be tactic values, 
+for i = 1, ..., n. 
+Supposing n > 1, solve [ltac_expr1 | ... | ltac_exprn] applies v1 to each goal independently and stops if it succeeds; 
+otherwise it tries to apply v2 and so on. It fails if there is no solving tactic. 
+"Formal":
+[[solve [tac] ]] = λg:{H,G}. if [[tac]](g) == {empty} then [[tac]] g else [[fail]] g.
+[[solve [tac1|...|tac n] ]] = λg:{H,G}. if [[tac1]] == {empty} then [[tac]] g else [[solve [tac2|...|tacn] ]]
+*)
+
+Ltac pr_numgoals := 
+  let n := numgoals in 
+  idtac "There are" n "goals".
+Goal P 1 /\ P 2 /\ P 4.
+split.
+2:split.
+all:[> unfold P | unfold P | auto].
+
+(* shows that first denotations semantic ok *)
+(* 2:split; [> unfold P | auto]. *)
+
+all: let n := numgoals in 
+guard n = 3.
+1:pr_numgoals.
+all:unfold P;auto || auto.
+Qed.
+
+Theorem модус_поненс: forall (A B:Prop) (C: A) (H: A -> B), B.
+intros.
+apply H.
+apply C.
+Qed.
+
+Theorem simple_2: forall A:Prop, A -> A.
+intros.
+apply H.
+Qed.
+
+Theorem aaa (A:False)(B:False)(C:False): 1=2 /\ 2=3 /\ 3=4.
+split. 2:split.
+1-3:let n := numgoals in idtac n.
+1-3:[>refine match A with end | refine match A with end | refine match C with end].
+Qed.
+
+
+Goal forall (m n k:nat), m=m /\ n=n /\ k=k.
+intros.
+split. 2:split.
+Fail match goal with 
+| [|- True] => auto
+end.
+tryif fail  then auto else simpl.
+all:auto.
+Qed.
+
+
+Inductive hlist : (list Set) -> Type :=
+| HNil : hlist nil
+| HCons : forall (x:Set) (ls:list Set), x -> hlist ls -> hlist (x::ls).
+
+Check S 0.
+
+
+
+
+(* (c) Copyright Christian Doczkal, Saarland University                   *)
+(* Distributed under the terms of the CeCILL-B license                    *)
+Require Import mathcomp.ssreflect.ssreflect.
+From mathcomp Require Import all_ssreflect.
+From CompDecModal.libs
+ Require Import edone bcase fset base modular_hilbert sltype.
+
+Set Default Proof Using "Type".
+
+Set Implicit Arguments.
+Unset Strict Implicit.
+Import Prenex Implicits.
+
+(** * CTL in Coq
+
+We define two semantics for CTL, the usual semantics in terms of infinite paths
+and another semantics using induction and coinduction.  While we only need AX,
+AU, and AR to define the evaluation function, we also define the duals. These
+are used mainly when constructing models. *)
+
+Notation "P =p Q" := (forall x, P x <-> Q x) (at level 40).
+Definition PredC X (p : X -> Prop) x := ~ p x.
+
+Section Characterizations.
+  (** ** Inductive Characterizations *)
+
+  Variables (X : Type) (e : X -> X -> Prop).
+
+  Definition cEX (p : X -> Prop) (w : X) : Prop := exists2 v, e w v & p v.
+  Definition cAX (p : X -> Prop) (w : X) : Prop := forall v, e w v -> p v.
+
+  CoInductive cAR (p q : X -> Prop) (w : X) : Prop :=
+  | AR0 : p w -> q w -> cAR p q w
+  | ARs : q w -> (forall v, e w v -> cAR p q v) -> cAR p q w.
+
+  Inductive cAU (p q : X -> Prop) (w : X) : Prop :=
+  | AU0 : q w -> cAU p q w
+  | AUs : p w -> (forall v, e w v -> cAU p q v) -> cAU p q w.
+
+  CoInductive cER (p q : X -> Prop) (w : X) : Prop :=
+  | ER0 : p w -> q w -> cER p q w
+  | ERs v : q w -> e w v -> cER p q v -> cER p q w.
+
+  Inductive cEU (p q : X -> Prop) (w : X) : Prop :=
+  | EU0 : q w -> cEU p q w
+  | EUs v : p w -> e w v -> cEU p q v -> cEU p q w.
+
+  Lemma cAU_cER (p q : X -> Prop) (w : X) :
+    cER (PredC p) (PredC q) w -> ~ cAU p q w.
+  Proof.
+    move => E A. elim: A E => {w}[w qw|w]; first by case.
+    move => pw _ IH. case => // v _. exact: IH.
+  Qed.
+
+  Lemma cAR_cEU (p q : X -> Prop) (w : X) :
+    cEU (PredC p) (PredC q) w -> ~ cAR p q w.
+  Proof.
+    move => E A. elim: E A => {w} [w ?|w v]; first by case.
+    move => pw wv _ IH. case => // qw /(_ _ wv). exact: IH.
+  Qed.
+
+  Lemma AU_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    cAU p1 q1 w -> cAU p2 q2 w.
+  Proof.
+    move => H1 H2. elim => {w} - w; first by move => ?; apply AU0; auto.
+    move => /H1 ? _ IH. apply: AUs ; auto.
+  Qed.
+
+  Lemma AR_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    cAR p1 q1 w -> cAR p2 q2 w.
+  Proof.
+    move => H1 H2. move: w. cofix AR_strengthen => w.
+    case => [ /H1 ? /H2 ?|/H2 ? N]; first exact: AR0.
+    apply: ARs => // v wv. apply: AR_strengthen. exact: N.
+  Qed.
+
+  Lemma ER_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    cER p1 q1 w -> cER p2 q2 w.
+  Proof.
+    move => Hp Hq. move: w. cofix ER_strengthen => w. 
+    case => [/Hp ? /Hq ?|v V1 V2 V3]; first exact: ER0.
+    by apply: ERs _ V2 _ ; auto.
+  Qed.
+
+  Lemma EU_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    cEU p1 q1 w -> cEU p2 q2 w.
+  Proof.
+    move => H1 H2. elim => {w} - w; first by move => ?; apply EU0; auto.
+    move => v /H1 wv ? IH. apply: EUs ; auto.
+  Qed.
+
+  Lemma cAU_eq (x y : X) (p q : pred X) :
+    p x = p y -> q x = q y -> e x =p e y -> cAU p q x -> cAU p q y.
+  Proof.
+    move => Hp Hq Ht. case => [?|px Hs]; first by apply: AU0; congruence.
+    apply: AUs => //. congruence. move => v /Ht. exact: Hs.
+  Qed.
+
+  Lemma cEU_eq (x y : X) (p q : pred X) :
+     p x = p y -> q x = q y -> e x =p e y -> cEU p q x -> cEU p q y.
+  Proof.
+    move => Hp Hq Ht. case => [?|z xz Hs]; first by apply: EU0; congruence.
+    apply: EUs => //. congruence. exact/Ht.
+  Qed.
+
+  (** ** Path Characterizations *)
+
+  Implicit Type (pi : nat -> X).
+  Definition path pi := forall n, e (pi n) (pi n.+1).
+
+  Definition pcons x pi k := if k is k.+1 then pi k else x.
+  Definition ptail pi k := pi k.+1.
+  
+  Lemma path_pcons x pi : e x (pi 0) -> path pi -> path (pcons x pi). 
+  Proof. move => H1 H2 [|k] //. exact: H2. Qed.
+
+  Lemma path_ptail pi : path pi -> path (ptail pi).
+  Proof. move => H n. exact: H. Qed.
+
+  Definition p_until (p q : X -> Prop) pi := 
+    exists2 n, forall m, m < n -> p (pi m) & q (pi n).
+
+  Definition p_release (p q : X -> Prop) pi := 
+    forall n, (exists2 m, m < n & p (pi m)) \/ q (pi n).
+
+  Definition pAU (p q : X -> Prop) (w : X) : Prop := 
+    forall pi, path pi -> pi 0 = w -> p_until p q pi.
+
+  Definition pAR (p q : X -> Prop) (w : X) : Prop := 
+    forall pi, path pi -> pi 0 = w -> p_release p q pi.
+
+  Definition pEU (p q : X -> Prop) (w : X) : Prop := 
+    exists pi, [/\ path pi, pi 0 = w & p_until p q pi].
+
+  Definition pER (p q : X -> Prop) (w : X) : Prop := 
+    exists pi, [/\ path pi, pi 0 = w & p_release p q pi].
+
+  Lemma pAU_pER (p q : X -> Prop) (w : X) :
+    pER (PredC p) (PredC q) w -> ~ pAU p q w.
+  Proof. 
+    case => pi [pi1 pi2 pi3]. move/(_ pi pi1 pi2).
+    case => n n1 n2. case/(_ n): pi3; last by apply.
+    case => m m1 m2. apply: m2. exact: n1.
+  Qed.
+
+  Lemma pAR_pEU (p q : X -> Prop) (w : X) :
+    pEU (PredC p) (PredC q) w -> ~ pAR p q w.
+  Proof.
+    case => pi [pi1 pi2 pi3]. move/(_ pi pi1 pi2) => pi4.
+    case: pi3 => n n1 n2. case: (pi4 n) => [[m m1 m2]|]. 
+    - exact: n1 (m) _ _.
+    - exact: n2.
+  Qed.
+
+  Lemma pAR_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    pAR p1 q1 w -> pAR p2 q2 w.
+  Proof. 
+    move => Hp Hq H pi pi1 pi2 n. move: (H pi pi1 pi2 n).
+    by case; [left|right]; firstorder.
+  Qed.
+
+  Lemma pAU_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    pAU p1 q1 w -> pAU p2 q2 w.
+  Proof. 
+    move => Hp Hq H pi pi1 pi2. move: (H pi pi1 pi2).
+    case => n n1 n2. by exists n; firstorder.
+  Qed.
+
+  Lemma pER_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    pER p1 q1 w -> pER p2 q2 w.
+  Proof. 
+    move => Hp Hq [pi [? ? Hpi]]. exists pi. split => // n.
+    by case: (Hpi n); firstorder.
+  Qed.
+
+  Lemma pEU_strengthen (p1 q1 p2 q2 : X -> Prop) w :
+    (forall v, p1 v -> p2 v) -> (forall v, q1 v -> q2 v) ->
+    pEU p1 q1 w -> pEU p2 q2 w.
+  Proof.
+    move => Hp Hq [pi [? ? Hpi]]. exists pi. split => //.
+    case: Hpi => n n1 n2. exists n; firstorder.
+  Qed.
+
+End Characterizations.
+
+(** Dependent Choice *)
+Definition DC_ (X : Type) := forall R : X -> X -> Prop, 
+    (forall x, exists y, R x y) -> forall x, exists2 f, f 0 = x & path R f.
+Definition DC := forall X, DC_ X.
+
+
+(** ** Formulas *)
+
+Definition var := nat.
+
+Inductive form :=
+| fF
+| fV   of var
+| fImp of form & form
+| fAX  of form
+| fAR  of form & form
+| fAU  of form & form.
+Print form.
+Check @cons.
+
+Lemma eq_form_dec (s t : form) : { s = t} + { s <> t}.
+Proof. decide equality; apply eq_comparable. Qed.
+
+Definition form_eqMixin := EqMixin (compareP eq_form_dec).
+Canonical Structure form_eqType := Eval hnf in @EqType form form_eqMixin.
+
+(** To use formulas and other types built around formulas as base type
+for the finite set libaray, we need to show that formulas are
+countable. We do this by embedding formulas into the Ssreflect's
+generic trees *)
+
+Module formChoice.
+  Import GenTree.
+
+  Fixpoint pickle (s : form) :=
+    match s with
+      | fV v => Leaf v
+      | fF => Node 0 [::]
+      | fImp s t => Node 1 [:: pickle s ; pickle t]
+      | fAX s => Node 2 [:: pickle s]
+      | fAU s t => Node 3 [:: pickle s; pickle t]
+      | fAR s t => Node 4 [:: pickle s; pickle t]
+    end.
+
+  Fixpoint unpickle t :=
+    match t with
+      | Leaf v  => Some (fV v)
+      | Node 0 [::]  => Some (fF)
+      | Node 1 [:: t ; t' ] =>
+          obind (fun s => obind (fun s' => Some (fImp s s')) (unpickle t')) (unpickle t)
+      | Node 2 [:: t ] => obind (fun s => Some (fAX s)) (unpickle t)
+      | Node 3 [:: t ; t' ] =>
+        obind (fun s => obind (fun s' => Some (fAU s s')) (unpickle t')) (unpickle t)
+      | Node 4 [:: t ; t' ] =>
+        obind (fun s => obind (fun s' => Some (fAR s s')) (unpickle t')) (unpickle t)
+      | _ => None
+    end.
+
+  Lemma pickleP : pcancel pickle unpickle.
+  Proof. move => s. by elim: s => //= [s -> t ->| s -> | s -> t -> | s -> t -> ]. Qed.
+End formChoice.
+
+Definition form_countMixin := PcanCountMixin formChoice.pickleP.
+Definition form_choiceMixin := CountChoiceMixin form_countMixin.
+Canonical Structure form_ChoiceType := Eval hnf in ChoiceType form form_choiceMixin.
+Canonical Structure form_CountType := Eval hnf in CountType form form_countMixin.
+
+(** ** Models
+
+We distinguish thee classes of models
+
+- raw models or or serial transition systems ([sts]): Both, the satisfaction
+  relation for the path semantics [satisfies] and the inductive satisfaction
+  relation [eval] are refined on this class
+
+- finite models ([fmodel]): models where the type of states is finite and
+  everything else is decidable
+
+- classical models ([cmodel]): models [eval] is logically decidable. This is the
+  largest class of models for which we can show soundness of the hilbert system.
+
+
+Unlike for K and Kstar, where stability under double negation would be enough to
+prove soundness of the Hilbert system, for CTL we have to require of classical
+models that the evaluation relation is not only stable under double negation
+but in fact logically decidable. The reason for this is the coinductive modality
+AR. Using stability for classical reasoing would violate the guard condition for
+coinductive proofs. *)
+
+Definition stable X Y (R : X -> Y -> Prop) := forall x y, ~ ~ R x y -> R x y.
+Definition ldec X Y (R : X -> Y -> Prop) := forall x y, R x y \/ ~ R x y.
+
+Definition AP := var.
+Record sts := STS {
+  state  :> Type;
+  trans  : state -> state -> Prop;
+  label  : var (*AP*) -> state -> Prop;
+  serial : forall w:state, exists v, trans w v
+}.
+Check STS.
+
+
+
+
+Inductive sts3 :=
+| STS3
+	 : forall (state2 : Type) (trans2 : state2 -> state2 -> Prop),
+       (state2 -> Prop) ->
+       (var -> state2 -> Prop) ->
+       (forall w : state2, exists v : state2, trans2 w v) -> sts3
+.
+Check STS3.
+
+Inductive sts4 := 
+| STS4: forall (state : Type) (trans:state -> state -> Prop), (var -> state -> Prop) -> (forall w : state, exists v : state, trans w v) -> sts4
+.
+Prenex Implicits trans.
+
+Record fmodel := FModel {
+  fstate :> finType;
+  ftrans : rel fstate;
+  flabel : var -> pred fstate;
+  fser w : exists v, ftrans w v
+}.
+Prenex Implicits ftrans.
+
+Canonical sts_of_fmodel (M : fmodel) : sts := STS (@flabel M) (@fser M).
+Coercion sts_of_fmodel : fmodel >-> sts.
+
+(** ** Satisfaction for inductuvice and path semantics *)
+
+
+
+Record sts5 := STS5 {
+  state5  :> Type;
+  trans5  : state5 -> state5 -> Prop;
+  label5  : var (*AP*) -> state5 -> Prop;
+  init_state: state5 -> Prop;
+  serial5 : forall w:state5, exists v, trans5 w v
+}.
+
+Fixpoint satisfies5 (M : sts5) (s : form) := 
+match s with
+| fF       => (fun _ => False)
+| fV v     => fun s=> label5 v s /\ init_state s
+| fImp s t => (fun w => satisfies5 M s w -> satisfies5 M t w)
+| fAX s    => cAX (@trans5 M) (satisfies5 M s)
+| fAR s t  => pAR (@trans5 M) (satisfies5 M s) (satisfies5 M t)
+| fAU s t  => pAU (@trans5 M) (satisfies5 M s) (satisfies5 M t)
+end.
+
+Check @satisfies5.
+
+
+Fixpoint satisfies (M : sts) (s : form) := 
+match s with
+| fF       => (fun _ => False)
+| fV v     => label v
+| fImp s t => (fun w => satisfies M s w -> satisfies M t w)
+| fAX s    => cAX (@trans M) (satisfies M s)
+| fAR s t  => pAR trans (satisfies M s) (satisfies M t)
+| fAU s t  => pAU trans (satisfies M s) (satisfies M t)
+end.
+
+
+
+
+
+(* Record sts := STS {
+  state  :> Type;
+  trans  : state -> state -> Prop;
+  label  : var -> state -> Prop;
+  serial : forall w:state, exists v, trans w v
+}. *)
+
+
+Inductive bool : Set :=  true : bool | false : bool.
+
+Definition trans_bool (s1:bool)(s2:bool):Prop := 
+match s1, s2 with 
+| true, false => True 
+| false, true => True
+| _, _ => False
+end.
+
+Definition label_bool(v: var)(s:bool):Prop :=
+match v, s with 
+| 0, true => True
+| 1, false => True
+| _, _ => False
+end.
+Definition serial_bool: forall w:bool, exists v, trans_bool w v.
+intros. case w. all: [>eexists false | eexists true]; compute; apply I.
+Defined.  
+
+Print sts.
+Print nat.
+Check STS.
+
+(* Inductive sts_t: Prop :=
+| sts_constr:forall (state : Type) (trans : state -> state -> Prop), (var -> state -> Prop) -> (forall w : state, exists v : state, trans w v) -> sts_t . *)
+
+
+
+Print form.
+Check fAX (fV 0).
+Definition model_bool: sts :=  
+  {| state := bool; trans := trans_bool; label := label_bool; serial := serial_bool |}.
+
+  Check STS (state:=bool) (trans:=trans_bool)(label_bool) serial_bool.
+Check state model_bool.
+Print form.
+
+
+Theorem check1: satisfies(M:=model_bool) (fAX (( (fV 1)))) true.
+Proof.
+  compute.
+  intros.
+  auto.
+Qed.
+(* GOAL!!! *)
+Check forall (m:sts)(f: form) (s: state m), satisfies f s.
+Theorem check2(m:sts)(f: form) (s: state m): satisfies f s.
+
+Proof.
+  intros.
+Admitted.
+
+
+
+
+
+
+
+ 
+
+
+
+
+

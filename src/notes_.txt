@@ -1,0 +1,284 @@
+
+
+
+binder_tactics are: fun and let
+
+l3_tactics include 
+Ltac tactics: try, do, repeat, timeout, time, progress, once, exactly_once, only and abstract
+
+l2_tactics are: tryif
+
+l1_tactics are the simple_tactics, first, solve, idtac, fail and gfail 
+as well as match, match goal and their lazymatch and multimatch variants.
+
+value_tactics, which return values rather than change the proof state. 
+They are: eval, context, numgoals, fresh, type of and type_term.
+https://www.lirmm.fr/~delahaye/papers/ltac%20(LPAR'00).pdf
+
+Это тактикалы
+1.tac1;tac2 
+Applies tac1 and tac2 to all the subgoals
+
+2.tac;[tac1|...|taci|...|tacn] 
+Applies tac and taci to the i-th subgoal
+
+3. tac1 Orelse tac2 
+Applies tac1 or tac2 if tac1 fails
+
+4. Do n tac 
+Applies tac n times
+
+5.Repeat tac 
+Applies tac until it fails
+
+6. Try tac 
+Applies tac and does not fail if tac fails
+
+7.First [tac1|...|taci|...|tacn] 
+Apply the taci which does not fail
+
+8. Solve [tac1|...|taci|...|tacn] 
+Apply the taci which solves
+
+9. Idtac 
+Leaves the goal unchanged
+
+10. Fail 
+Always fails
+
+Old but gold BNF of Ltac.
+ltac_expr         ::=  | ltac_expr ; ltac_expr
+                        "Unformal": The expression ltac_expr1 is evaluated to v1, which must be a tactic value.
+                        The tactic v1 is applied to the current goal, possibly producing more goals. 
+                        Then ltac_expr2 is evaluated to produce v2, which must be a tactic value. 
+                        The tactic v2 is applied to all the goals produced by the prior application. Sequence is associative.
+                        "Formal": [[phi;psi]] = λg:{H,G}. {h | h \in G и \exists u : u \in [[phi]](g) и h \in [[psi]](u) }
+
+                       | [> ltac_expr | ... | ltac_expr ]
+                        "Unformal": The expressions ltac_expri are evaluated to vi, for i = 1, ..., n and all have to be tactics. The vi is applied to the i-th goal, for i = 1, ..., n. It fails if the number of focused goals is not exactly n.
+                        "Formal": [[ '[>' phi_1 '|' ... '|' phi_i '|' ... '|' phi_n ']' ]] = λg:{H,G}. if length(g) == n then {g_i ∈ G| phi_i g_i} else fail g.
+
+                       //| ltac_expr ; [ ltac_expr | ... | ltac_expr ]
+                       | ltac_expr3
+ltac_expr3        ::=  | do (natural | ident) ltac_expr3
+                        "Unformal": Applies tac n times
+                        "Formal": [[ do (natural | ident) ltac_expr3 ]] = λg:{H,G}. ltac_expr3 g ... ltac_expr3 g (n times) 
+
+                       | progress ltac_expr3
+                        "Unformal":The tactic value v is applied to each focused subgoal independently. If the application of v to one of the focused subgoal produced subgoals equal to the initial goals (up to syntactical equality), then an error of level 0 is raised.
+                        "Formal": progress phi := λg{H,G}. if g=phi g then fail else phi.
+
+                       | repeat ltac_expr3
+                        "Unformal": Applies tac until it fails
+                        "Formal": repeat tac  = λg. if tac g = fail g then g else tac g
+
+                       | try ltac_expr3
+                        "Unformal": Applies tac and does not fail if tac fails 
+                        "Formal": try tac = λg:G. if tac g == fail g then g else tac g. 
+
+                       | once ltac_expr3
+                       | exactly_once ltac_expr3
+                        "HELP"
+
+
+                       
+                       // | timeout (natural | ident) ltac_expr3 (useless apply tac after natural second)
+                       // | time [string] ltac_expr3 (get time of applying tac)
+                       // | only selector: ltac_expr3
+                       | ltac_expr2
+ltac_expr2        ::=  | ltac_expr1 || ltac_expr3
+                        "Unformal":ltac_expr_1 and ltac_expr_2 are evaluated respectively to v1 and v2 which must be tactic values. The tactic value v1 is applied in each subgoal independently and if it fails to progress then v2 is applied. 
+                        "Formal": ltac_expr_1 || ltac_expr_2 = λg:G. if (progress ltac_expr_1) g == fail g then ltac_expr_2 g else ltac_expr_1 g. 
+                       
+                       | ltac_expr1 + ltac_expr3
+                        "Unformal": ltac_expr1 and ltac_expr2 are evaluated respectively to v1 and v2 which must be tactic values. 
+                        The tactic value v1 is applied to each focused goal independently and 
+                        if it fails or a later tactic fails, 
+                        then the proof backtracks to the current goal and v2 is applied. 
+                        "Formal": ltac_expr_1 + ltac_expr_2= λg. if ltac_expr_1 g == fail g then ltac_expr_2 g else ltac_expr_1 g.
+
+                       | tryif ltac_expr1 then ltac_expr1 else ltac_expr1
+                        "Unformal": is a generalization of the biased-branching tactics above. 
+                        The expression ltac_expr1 is evaluated to v1, which is then applied to each subgoal independently. 
+                        For each goal where v1 succeeds at least once, 
+                        ltac_expr2 is evaluated to v2 which is then applied collectively to the generated subgoals. 
+                        The v2 tactic can trigger backtracking points in v1: where v1 succeeds at least once, 
+                        tryif ltac_expr1 then ltac_expr2 else ltac_expr3 is equivalent to v1; v2. 
+                        In each of the goals where v1 does not succeed at least once, 
+                        ltac_expr3 is evaluated in v3 which is is then applied to the goal.
+                        "Formal": tryif ltac_expr_1 then ltac_expr_2 else ltac_expr_3 = (ltac_expr1;ltac_expr_2) + ltac_expr_3
+                       | ltac_expr1
+ltac_expr1        ::=  | fun name ... name => atom
+                        "Formal": λ ... . [[atom]] 
+
+                       let [rec] let_clause with ... with let_clause in atom
+                        "HELP"
+
+                       match goal with context_rule | ... | context_rule end
+                       match reverse goal with context_rule | ... | context_rule end
+                       match ltac_expr with match_rule | ... | match_rule end
+                       lazymatch goal with context_rule | ... | context_rule end
+                       lazymatch reverse goal with context_rule | ... | context_rule end
+                       lazymatch ltac_expr with match_rule | ... | match_rule end
+                       multimatch goal with context_rule | ... | context_rule end
+                       multimatch reverse goal with context_rule | ... | context_rule end
+                       multimatch ltac_expr with match_rule | ... | match_rule end
+                       
+                       //abstract atom
+                       //abstract atom using ident
+
+                       | first [ ltac_expr | ... | ltac_expr ]
+                        "Unformal": Apply the taci which does not fail 
+                        "Formal": 
+                        [[first [tac] ]] = λg:{H,G}. [[ tac g ]]
+                        [[ first [tac1|...|taci|...|tacn] ]] = λg:{H,G}. if tac1 g == fail g then [[first [tac2|...|tacn]]] else tac1 g
+
+                       | solve [ ltac_expr | ... | ltac_expr ]
+                        "Unformal": The ltac_expri are evaluated to vi and vi must be tactic values, 
+                        for i = 1, ..., n. 
+                        Supposing n > 1, solve [ltac_expr1 | ... | ltac_exprn] applies v1 to each goal independently and stops if it succeeds; 
+                        otherwise it tries to apply v2 and so on. It fails if there is no solving tactic. 
+                        "Formal":
+                        [[solve [tac] ]] = λg:{H,G}. if [[tac]](g) == {empty} then [[tac]] g else [[fail]] g.
+                        [[solve [tac1|...|tac n] ]] = λg:{H,G}. if [[tac1]] == {empty} then [[tac]] g else [[solve [tac2|...|tacn] ]]
+
+                       //| idtac [ message_token ... message_token]
+                       | fail [natural] [message_token ... message_token]
+                       | gfail [natural] [message_token ... message_token]
+                       "HELP"
+
+                       
+                       fresh [ component … component ]
+                       It evaluates to an identifier unbound in the goal. 
+                       This fresh identifier is obtained by concatenating the value of the components 
+                       (each of them is, either a qualid which has to refer to a (unqualified) name, 
+                       or directly a name denoted by a string).
+                       
+                       context ident [term]
+                       eval redexpr in term
+                       type of term
+                       constr : term
+                       uconstr : term
+                       type_term term
+                       numgoals
+                       guard test
+                       assert_fails ltac_expr3
+                       assert_succeeds ltac_expr3
+                       tactic
+                       qualid tacarg ... tacarg
+                       atom
+atom              ::=  qualid
+                       ()
+                       int
+                       ( ltac_expr )
+component         ::=  string | qualid
+message_token     ::=  string | ident | int
+tacarg            ::=  qualid
+                       ()
+                       ltac : atom
+                       term
+let_clause        ::=  ident [name ... name] := ltac_expr
+context_rule      ::=  context_hyp, ..., context_hyp |- cpattern => ltac_expr
+                       cpattern => ltac_expr
+                       |- cpattern => ltac_expr
+                       _ => ltac_expr
+context_hyp       ::=  name : cpattern
+                       name := cpattern [: cpattern]
+match_rule        ::=  cpattern => ltac_expr
+                       context [ident] [ cpattern ] => ltac_expr
+                       _ => ltac_expr
+test              ::=  int = int
+                       int (< | <= | > | >=) int
+selector          ::=  [ident]
+                       int
+                       (int | int - int), ..., (int | int - int)
+toplevel_selector ::=  selector
+                       all
+                       par
+                       !
+top      ::=  [Local] Ltac ltac_def with ... with ltac_def
+ltac_def ::=  ident [ident ... ident] := ltac_expr
+              qualid [ident ... ident] ::= ltac_expr
+
+
+посмотрел.
+1. весь синтаксис ltac не нужен, 
+так что полагаю, что эта огромная БНФ урежется.
+
+
+2. гипотезы и цели: нужны синтаксис и хотя бы на содержательном уровне семантика. 
+не обязательно во всей красе и широте Coq, 
+но чтобы было ясно во всей строгости хотя бы для какого-нибудь показательного фрагмента, 
+с какими объектами будут дальше иметь дело тактики. но вообще подозреваю, 
+что не так уж и сложно будет строго в общем виде ввести понятие типа, 
+записи "имя : тип" (ключевой элемент исчисления индуктивных конструкций) и 
+потом на основе этого - гипотезы, цели и всё такое (всё это суть типы или совокупности типов, насколько понимаю).
+term        ::= | forall binders , term
+                | term : term
+                | term -> term
+                | term arg … arg
+                | qualid
+                | sort
+                | ( term )
+arg         ::= | term
+binders     ::= | binder … binder
+binder      ::= | name
+                | ( name … name : term )
+                | ( name [: term] := term )
+name        ::= | ident | _
+qualid      ::= | ident
+sort        ::= | Prop 
+
+
+3. насколько помню после поверхностного просмотра, в ltac используется два вида значений: 
+значение тактики (преобразователь целей) и 
+значение какое-то ещё 
+(то, которое не тактика, но можно использовать в описании тактики, вроде всяких чисел).
+подозреваю, что let - это задание как раз такого "какое-то ещё" значения, 
+и для него просто нужно определить свои двойные квадратные скобки.
+
+
+4. лямбда-термы для семантики - это классно, 
+но если их используете, то тогда нужно отдельно определить и их семантику. 
+это хороший способ записи, но смотрите, что будет проще - либо написать синтаксис и 
+семантику лямбда-термов и использовать такой формат, как сейчас, либо написать в другом стиле:
+"[[составная_тактика]](h,f,e)=(h',f',e'), 
+где множество гипотез h', множество целей f' и множество <..> e' устроены так: <написать любым математическим способом, 
+как они устроены>".
+
+5. необязательный технический нюанс. если пишете в техе, 
+то можно двойные квадратные скобки написать чуть покрасивше так: 
+в шапке "\usepackage{stmaryrd}", и команды - \llbracket и \rrbracket.
+
+6. не совсем понял про активные цели. 
+если на множестве целей есть порядок, то так и вводите - не множество, а упорядоченный набор. 
+если активная цель выбирается как-то произвольно и порядка никакого нет, 
+то это совокупность из множества и его элемента. 
+если имеется в виду что-то другое 
+(например, что активных целей на самом деле нет, и что в семантике произвольно выбирается цель и с ней что-то делается), 
+то смотря что.
+
+7. насколько помню, тактика отображает объект не в один объект, а в несколько. полагаю, 
+что тут это свёрнуто в множество целей, но пока есть смутное подозрение, 
+что у разных целей могут быть разные наборы гипотез. 
+если я угадал, то я бы предложил семантику тактики определить как отображение (H, одна цель, E) в 2^{H, одна цель, E}, 
+соответственно перестроив семантику. 
+либо как отображение (множество{(множество гипотез, одна цель)}, E) в такие же элементы. 
+и подозреваю, что активная цель - это не свойство такой тройки, 
+а то, что появится при таком выборе (или текущем выборе) нотации, когда захочется строго определить, 
+чему же равны квадратные скобки.
+
+8. я бы предложил использовать в лямбда-термах и других местах, 
+где нет жёсткой привязки к синтаксису Coq, 
+математический стиль записи функций "f(a,b)" вместо coq-стиля "(f a b)", 
+если я правильно понял, что тут используется Coq-стиль.
+
+9. потом, когда красивая-стройная часть сложится, надо будет отдельно посмотреть, 
+учтено ли то, что тактики не всегда срабатывают, и если не учтено, 
+то учесть. но это можно и потом, если сходу не будет ясно, куда и как это вставить.
+
+10. по расположению текста. центрирование строчек  семантики - это не очень. 
+предлагаю всё это писать в обычном \begin{itemize}.
+
+сторона движения та. если чего-то по замечаниям непонятно, 
+то пишите-звоните (только звоните если сегодня, то не прямо сейчас).
