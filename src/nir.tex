@@ -1,0 +1,517 @@
+\documentclass[12pt]{article}
+
+% = Подключение пакетов =
+%  - Поддержка русских букв -
+\usepackage[T1,T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\usepackage{misccorr}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{ textcomp }
+\usepackage{stmaryrd}
+%  - Размеры полей -
+\usepackage[right=1.5cm,top=2cm,left=3cm,bottom=2cm]{geometry}
+%  - Отступ в начале первого абзаца -
+\usepackage{indentfirst}
+%  - Титульный лист с содержанием -
+\usepackage{nir}
+%  - Гиперссылки (url, ref, cite) -
+\usepackage{hyperref}
+
+% = Общие настройки =
+%  - Полуторный межстрочный интервал -
+\linespread{1.5}
+%  - Разрешить разреженные строки и запретить перенос -
+\sloppy
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+
+
+% = (!!!) Здесь впишите свои данные =
+%  - Название работы -
+\nirTitle{Задача проверки моделей в 
+исчислении индуктивных конструкций}
+%  - Как вас зовут, В РОДИТЕЛЬНОМ ПАДЕЖЕ -
+\nirAuthor{Ларочкина Петра Викторовича}
+%  - Суффикс в названии группы после подчёркивания: "дс" или "дус" -
+\nirGroupSuffix{дс}
+%  - Степень, должность и Фамилия И.О. научного руководителя -
+\nirSupervisorTitle{к.ф.-м.н.,~доцент}
+\nirSupervisorName{Подымов~В.\,В.}
+%  - Если показывается неправильный год, то раскомментируйте и напишите правильный -
+% \nirYear{2019}
+
+\begin{document}
+  \nirPutTitleContents
+  
+\section{Введение}
+
+
+Темпоральная логика — логика, язык которой содержит средства описания взаимосвязей логических значений, изменяющихся с течением времени \cite{Clark}. Распространненными темпоральными логиками являются логика линейного времени (LTL) и логика ветвящегося времени (CTL). Их обобщением является расширенная логика ветвящегося времени (CTL*). Темпоральные логики активно применяются в задачах верификации программ (проверки свойств программ). Утверждения о свойствах программы можно описать с помощью языка темпоральной логики. 
+Программу можно описать как систему с конечным числом состояний и отношением перехода. Одним из вариантов такой системы может быть структура Крипке. Задача проверки выполнимости построенных таким образом утверждений на структуре Крипке называется проверка модели (\textit{model checking}).
+
+\textit{Coq} -- интерактивное средство доказательства теорем. Это средство позволяет строить и доказывать теоремы, которые имеют высокую степень доверия, и оно же проверяет правильность построенного доказательства. 
+Правильность работы самого средства \textit{Coq} обеспечивается засчет того, что ядро \textit{Coq} реализовано довольно простым способом, чтобы сократить вероятность ошибки, к тому же теория, лежащая в основе, является надежной. 
+\textit{Coq} активно применяется для верификации программного обеспечения \cite{CompCert} \cite{SoftwareFoundations6} и для доказательств утверждений из математики\cite{mathcomp}. 
+
+% Основа построения доказательства теорем в \textit{Coq} -- это заложенное в нем исчисление конструкций \cite{Coquand}. Исчисление -- это система, которая определяет правила построения доказательств теорем. Она включает в себя алфавит для записи высказываний, синтаксис формул, множество аксиом (формул, верных без доказательства) и множество правил вывода одних формул из других. В исчислении конструкций такими формулами являются типы. 
+% В \textit{Coq} можно создавать собственные индуктивные типы. 
+% Через типы можно описать цель, то есть утверждение, которое необходимо доказать. 
+Основным инструментом для построения доказательств в \textit{Coq} являются тактики. Тактики -- это особые команды для поэтапного построения доказательства теоремы, причем такие, что могут быть реализованы и самим пользователем.
+% с возможностью проверить корректность. 
+% Доказательство в \textit{Coq} -- это перечисление тактик.
+В \textit{Coq} доступны несколько инструментов, позволяющих описывать новые тактики: встроенный язык тактик \textit{Ltac}, плагин \textit{Elpi} для взаимодействия с \textit{coq-Api} и нотации для тактик \textit{Tactic Notation}. 
+% Эти средства не нарушают надежность этих доказательств, так как в итоге получается применение уже проверенных <<атомарных>> тактик.
+
+Существует работы \cite{2007}\cite{thesis}\cite{2003}, посвященные анализу темпоральных логик в \textit{Coq}.
+В работе \cite{2003} автор реализует операторы \textit{LTL}, используя (индуктивные и коиндуктивные типы) нативные способы для доказательства простых утверждений. 
+В работе \cite{2007} автором была предложена формализация структуры Крипке и формул \textit{CTL*} в \textit{Coq}. При помощи этой формализации доказаны (средствами \textit{Coq}) некоторые свойства языка \textit{CTL*} и соответствующего варианта задачи проверки модели. 
+В работе \cite{thesis} автор провел обширное исследование, в котором удачно формализовал операторы \textit{CTL}, структуру Крипке и реализовал некоторые исчисления в \textit{Coq}. Главным результатом этой работы является утверждения о эквивалентности выполнимости формулы для разных логических систем. 
+Стоит отметить, что в этой работе построены новые тактики для применения в доказательствах утверждений о конечных множествах. Однако ни одна из приведенных работ не предоставляет автоматического средства доказательства утверждения о выполнимости формулы на структуре Крипке.
+
+Целью научно-исследовательской работы было построение формальных синтаксиса и семантики языка \textit{Ltac} и базовых тактик, основываясь на их документации \cite{Ltac}, содержащей описания, близкие к формальным, но не вполне строгие. Разработать алгоритм, записанный в терминах формализованных элементов языка \textit{Ltac} и решающий рассматриваемую задачу проверки модели.
+
+В результате, были построены основная часть формального синтаксиса и семантики языка \textit{Ltac}. Была формализована задача проверки модели в терминах \textit{Coq}.
+
+В дальнейшей работе планируется разработать алгоритм, записанный в терминах формализованных элементов языка \textit{Ltac} и решающий рассматриваемую задачу проверки модели. Обосновать корректность и полноту разработанного алгоритма. Реализовать этот алгоритм в \textit{Coq} и проверить его работоспособность на нескольких избранных примерах.
+
+\section{Основные понятия}
+
+\subsection{Логика ветвящегося времени (CTL)}
+
+Пусть задано множество атомарных высказываний $AP$.
+\textit{Структура Крипке} — это четверка ($S$, $S_{0}$, $T$, $L$), где
+\begin{itemize}
+    \item $S$ — конечное множество состояний
+    \item $S_{0}$ — множество начальных состояний, $S_{0} \subset S $
+    \item $T$ — $T \subseteq S \times S$ — отношение переходов, обладающее свойством тотальности: для любого состояния $s$ существует состояние $s$', такое что $(s, s') \in T$
+    % двуместный предикат отношения перехода, $T: S \rightarrow S \rightarrow \{ True, False \} $ 
+    \item $L$ — функция разметки состояния, $L: S \rightarrow 2^{AP} $.
+\end{itemize}
+
+% \textit{Событие} — любое подмножество атомарных высказываний $E, E \in 2^{AP}$.
+
+% \textit{Трасса} — любая бесконечная последовательность событий $\alpha (\alpha = E_0,E_1...).$
+
+% \textit{Свойство вычислений} — любое множество трасс $P, P \in (2^{AP})^{\omega}$
+
+\textit{Путь в модели Крипке M из состояния} $s_0$ — это бесконечная последовательность состояний $\pi$ = $s_0, s_1...$, где $(s_{i}, s_{i+1}) \in T$ ($i = 0, 1, 2...$) модели Крипке \textit{M}. 
+Обозначим $i$-ый суффикс пути $\pi^{i} = s_{i}, s_{i+1},...$
+
+Логика ветвящегося времени (\textit{CTL}) является сужением \textit{CTL*}. В отличие от \textit{CTL*} в \textit{CTL} кванторы пути используются только вместе с темпоральными операторами, поэтому синтаксис определяется следующей БНФ:
+$$\phi ::= p | \neg \phi | \phi \vee \phi | \phi \wedge \phi | 
+\phi \Rightarrow \phi| EX\phi | AX\phi | AF\phi | EF\phi | AG\phi | EG\phi | \phi AU \phi|\phi EU \phi,$$
+где $p \in AP,$ $\phi$— формула логики ветвящегося времени.
+Семантика формул \textit{CTL} определяется следующим образом:
+\begin{enumerate}
+    % \item $M, s \vDash p \Leftrightarrow p \in L(s) $
+    % \item $M, s \vDash \neg \phi \Leftrightarrow M, s \nvDash \phi$
+    % \item $M, s \vDash \phi_1 \vee \phi_2  \Leftrightarrow M, s \vDash \phi_1$ или $M, s \vDash \phi_2 $
+    % \item $M, s \vDash \phi_1 \wedge \phi_2 \Leftrightarrow M, s \vDash \phi_1$ и $M, s \vDash \phi_2 $
+    % \item $M, s \vDash \phi_1 \Rightarrow\ \phi_2 \Leftrightarrow M, s \nvDash \phi_1$ и $M, s \vDash \phi_2 $
+    
+    \item $M, s \vDash EX\phi \Leftrightarrow$ в $M$ существует путь $\pi$ из состояния $s$, что  $M, \pi^{1} \vDash \phi$
+    
+    \item $M, s \vDash EF\phi \Leftrightarrow$ в $M$ существует такой путь $\pi$ из состояния $s$, такое $k \geq 0$, что $M, \pi^{k} \vDash \phi$ 
+    
+    \item $M, s \vDash EG\phi \Leftrightarrow$ в $M$ существует такой путь $\pi$ из состояния $s$, что для любого $k \geq 0$ верно, что $M, \pi^{k} \vDash \phi$ 
+    
+    \item $M, s \vDash \phi_1 EU \phi_2 \Leftrightarrow$ в $M$ существует путь $\pi$ из состояния $s$, существует такое $k \geq 0$, что $M$, $\pi^{k} \vDash \phi_2$ и для каждого $0 \leq j < k$ верно соотношение $M, \pi^{j} \vDash \phi_1$
+    
+    \item $M, s \vDash AX\phi \Leftrightarrow$ для любого пути $\pi$ из состояния $s$ в модели $M$ верно соотношение $M, \pi^{1} \vDash \phi$ 
+    
+    \item $M, s \vDash AF\phi \Leftrightarrow$ для любого пути $\pi$ из состояния $s$ в модели $M$ существует такое $k \geq 0$ верно, что $M, \pi^{k} \vDash \phi$ 
+    
+    \item $M, s \vDash AG\phi \Leftrightarrow$ для любого пути $\pi$ из состояния $s$ в модели $M$, для любого $k \geq 0$ верно, что $M, \pi^{k} \vDash \phi$ 
+    
+    \item $M, s \vDash \phi_1 AU \phi_2 \Leftrightarrow$ для любого пути $\pi$ из состояния $s$ в модели $M$ верно, что существует такое $k \geq 0$, что $M$, $\pi^{k} \vDash \phi_2$ и для каждого $0 \leq j < k$ верно соотношение $M, \pi^{j} \vDash \phi_1$
+    
+\end{enumerate}
+
+Пусть заданы модель Крипке $M = (S, S_0, R, L)$ и \textit{CTL}-формула $\phi$. Задача проверки модели заключается в том, чтобы проверить включение $S_0 \subset S_{\phi},$ где $S_{\phi} = \{s \in S | M,s \vDash \phi \}$. 
+
+
+\subsection{Исчисление конструкций}
+Пусть задано множество $Sorts=\{Set,\ Prop\}$ множество семейств типов, $Vars$ множество переменных.
+
+В формулах исчисления конструкций используются термы $T$.
+Синтаксис термов можно описать следующей БНФ:
+
+$$T ::= S\ |\ v\ |\ (T\ T)\ |\ \lambda v :T.\ T\ |\ \forall\ v:\ T\ .\ T,$$
+где $v \in Vars$ и $S \in Sorts$. Каждый терм имеет тип. С синтаксической точки зрения типы не отличаются от термов. 
+
+\begin{itemize}
+    \item <<$(T_1\ T_2)$>> обозначает результат применения отображения, записанного как $T_1$, к аргументу, записанному как $T_1$
+    \item <<$\lambda v:\ T_1.\ T_2$>> обозначает отображение с аргументом $v$ типа $T_1$, возвращающее для значения $v$ этого аргумента значение выражения $T_1$ на $v$
+    \item <<$\forall\ v:\ T_1.\ T_2$>> обозначает семейство типов, параметризованное типом $T_1$ переменной $v$
+    \item <<$v:T_1$>> обозначает, что переменная $v$ имеет тип $T_1$
+    \item <<$T_1 \xrightarrow{} T_2$>> обозначает <<$\forall v:T_1. T_2$>>, где $v$ не входит в $T_2$.
+\end{itemize}
+
+% В этом исчислении можно доказывать суждения о термах. 
+Суждение о терме -- это тройка
+$$\Gamma \vdash A:B,$$
+где $A, B \in T$, $\Gamma= \{x_1:A_1,\ ...\ , x_n:A_n\}$ -- множество переменных типа $A_1,\ ...\ , A_n$.
+Она означает высказывание <<если множество переменных $\Gamma$ имеют соответствующие типы, то терм $A$ имеет тип $B$>>.
+Формула этого исчисления -- это суждение о терме.
+
+\subsubsection{Исчисление индуктивных конструкций}
+
+% Основный объектом исчисления индуктивных конструкций являются индуктивные типы. Синтаксис индуктивного типа $I$ над множеством имен $Constr$ определяется как конечное множество элементов множества $Constr \times T$
+% $$D(I) = \{ (constr_i, T_i) \},$$
+% где $constr_i \in Constr$ и $T_i$ имеет следующий синтаксис над множеством типов $Tp$, множеством индуктивных типов $X$ и множеством переменных $Name$
+
+% $$T ::= t\ |\ x\ |\ I\ |\ (T)\ |\ T \xrightarrow{} T\ |\ \forall name:T.\ T\ |\ \exists name:T.\ T,$$
+% где $t \in Tp,\ x \in X,\ name \in Name$
+
+% % При этом на синтаксис имеет следующие ограничения:
+% % \begin{enumerate}
+% %     \item Первым элементом БНФ в построении должен обязательно быть \textit{I}
+% % \end{enumerate}
+%  При этом первым элементом БНФ в построении должен обязательно быть \textit{I}.
+% Семантика индуктивного типа определяется как множество термов $\tau$, которые задаются следующей БНФ
+
+% % $$\tau ::= constr_1\ expr_1\ |\ ...\ |\ constr_n\ expr_n,$$
+% $$\tau ::=\ e_1\ |\ ...\ |\ e_n,$$
+
+% % где $constr_i$ $expr_i$ -- запись, которая строится в соответствии с парой $(constr_i, T_i)$ по следующим правилам:
+
+% где $e_i$ -- это запись $constr_i\llbracket T_i \rrbracket$, которая строится в соответствии с парой $(constr_i, T_i)$ по следующим правилам:
+% \begin{itemize}
+%     \item $ \llbracket t \rrbracket = f(t),$
+%     \item $\llbracket(t_{expr}) \rrbracket=f(t_{expr}),$
+%     \item $\llbracket t_{expr1} \xrightarrow{} t_{expr2} \rrbracket =\llbracket t_{expr1} \rrbracket$ $f(t_{expr2}),$ 
+%     \item $\llbracket \forall name:t_{expr1}.\ t_{expr2} \rrbracket = \llbracket t_{expr1}\rrbracket$ $f(t_{expr2}),$
+%     \item $\llbracket \exists name:t_{expr1}.\ t_{expr2} \rrbracket = 
+%     \llbracket \forall name_2:t.\forall name:t_{expr1}.\ ((t_{expr2} \xrightarrow{} name_2))\xrightarrow{} name_2\rrbracket $ 
+% \end{itemize}
+% где оценка $f$ индуктивных типов множества \textit{X} -- это отображение типа во множество термов, соответствующих этому типу, $name_2, name_2 \in Name$ -- имя, которое не используется в выражении.
+
+% % Рассмотрим последний применненый элемент БНФ $T$ в $T_i$. 
+% % \begin{center}
+% % \begin{tabular}{ |c|c| }
+% % \hline
+% %  вариант $T_i$ & правило раскрытия выражения  \\ 
+% %  \hline
+% %  $t$ & $f(t)$  \\ 
+% %  \hline
+% %  $(t_{expr})$ & $f(t_{expr})$  \\ 
+% %  \hline
+% %  $t_{expr1} \xrightarrow{} t_{expr2}$ & $t_{expr1}$ $f(t_{expr2})$  \\ 
+% %  \hline
+% %  $\forall name:t_{expr1}.\ t_{expr2}$ & $t_{expr1}$ $f(t_{expr2})$ \\ 
+% %  \hline
+% % \end{tabular}
+% % \end{center}
+% % , где $t_{expr1}$ рекурсивно раскрывается по тем же правилам
+% % .
+
+
+
+% Таким образом, исчисление индуктивных типов -- это расширение исчисления конструкций, где дополнительно вводится понятие индуктивного типа.
+
+% % Исчисление индуктивных конструкций (\textit{CIC}) -- это исчисления конструкций с возможностью создания индуктивных типов. Синтаксис терма индуктивного типа \textit{I} над множество имен $Constr$ задается следующей БНФ:
+
+% % \textbf{Вариант 1}
+% % $$ constr_1\ \tau_{1_{1}}\ ...\ \tau_{n_{1}} |\ ...\ |\ constr_m\ \tau_{1_{m}}\ ...\ \tau_{n_{m}}|\ I,$$
+% % где $constr_i \in Constr,\ n_i \geq 0, \tau_{i_{j}}$ -- терм типа исчисления конструкций или терм типа $I$. 
+
+% % \textbf{Вариант 2}
+% % $$ constr_1:\ T_1 |\ ...\ |\ constr_m:\ T_m,$$
+% % где $constr_i \in Constr, T_i$ -- терм исчисления конструкций или терм $I$.
+
+% % Таким образом, синтаксис термов исчисления конструкций расширяется добавлением БНФ, описанной выше для каждого нового индуктивного типа, и именем типа $I$. 
+
+
+
+\subsubsection{Соответствие Карри--Говарда}
+Соответствие Карри--Говарда -- это структурная эквивалентность между исчислением доказательств и системы типов. В частности, структурная эквивалентность есть между исчислением индуктивных конструкций и натуральным исчислением предикатов. Она проявляется в формулах и в правилах вывода. Суждение о терме $\Gamma \vdash A:B$ в \textit{CIC} имеет эквивалентную структуру секвенции $\Gamma \vdash B$ в натуральном исчислении предикатов. Правило вывода \textit{modus ponens} из натурального исчисления предикатов 
+
+$$\frac{\Gamma \vdash A, \Gamma \vdash A \xrightarrow{} B}{\Gamma \vdash B}$$
+имеет эквивалентную структуру правила вывода 
+
+$$\frac{\Gamma \vdash E_1:A, \Gamma \vdash E_2: A \xrightarrow{} B}{\Gamma \vdash E_2\ E_1 :B}$$ из исчисления конструкций.
+
+
+
+
+
+
+\section{Постановка задачи}
+В научно-исследовательской работе требовалось выполнить следующее:
+\begin{enumerate}
+    \item[1.] Предложить формальные синтаксис и семантику языка \textit{Ltac} и базовых тактик
+    \item[2.] Разработать алгоритм, записанный в терминах формализованных элементов языка \textit{Ltac} и решающий рассматриваемую задачу проверки модели
+\end{enumerate}
+
+  
+\clearpage
+\section{Выполненная работа и полученные результаты}
+
+
+\subsection{Синтаксис и семантика языка тактик \textit{Ltac}.}
+
+В \textit{Coq} доступны средства для создания собственных тактик, которые можно применять для доказательства теорем. Одним из таких средств является язык тактик \textit{Ltac}. 
+
+Тактика -- это отображение упорядоченного набора $\{(\Gamma_i, f_i)\}$ в упорядоченный набор $\{(\Gamma_i, f_i)\}$, где
+$\Gamma_i \subset \Gamma,\ \Gamma = \{x_1:A_1,\ ...\ , x_n:A_n\}$ -- это множество переменных типа $A_1,\ ...\ , A_n$ и $G= \{f_1, f_2, ..., f_n\}$ -- упорядоченный набор типов. Множество тактик обозначим \textit{Tactic}.
+
+Рассмотрим для примера тактику \verb|intros|. Тактика \verb|intros| использует правило обобщения и преобразует пару следующим образом:
+
+$$intros((\emptyset, \forall name: T_1. T_2)) = ((\{name:T_1\}, T_2)).$$
+
+Тактика \verb|intros| может применятся только к типам вида $\forall name: T_1. T_2$.
+
+Часть синтаксиса  языка тактик \textit{Ltac} над множеством тактик \textit{Tactic} можно задать следующей БНФ:
+
+\makeatletter
+\def\verbatim@font{\linespread{1}\normalfont\ttfamily}
+\makeatother
+\begin{verbatim}
+ltac_expr         ::=    ltac_expr ; ltac_expr
+                       | [> ltac_expr | ... | ltac_expr ]
+                       | (do (natural) ltac_expr)
+                       | (progress ltac_expr)
+                       | (repeat ltac_expr)
+                       | (try ltac_expr)
+                       | ((ltac_expr) || ltac_expr)
+                       | ((ltac_expr) + ltac_expr)
+                       | (tryif (ltac_expr) then (ltac_expr) else (ltac_expr))
+                       | (first [ ltac_expr | ... | ltac_expr ])
+                       | (solve [ ltac_expr | ... | ltac_expr ])
+                       | fail
+                       | tactic,
+\end{verbatim}
+где \verb|tactic|$\ \in Tactic$ и \textit{ltac\_expr} - $Ltac$-выражение, построенное на языке \textit{Ltac}. 
+
+
+
+% Приоритеты операций по убыванию:
+
+% \makeatletter
+% \def\verbatim@font{\linespread{1}\normalfont\ttfamily}
+% \makeatother
+% \begin{itemize}
+%     \item[1.] \verb|tactic|, \verb|fail|, \verb|solve|, \verb|first|
+%     \item[2.] \verb|tryif|, \verb|+|, ||
+%     \item[3.] \verb|try|, \verb|repeat|, \verb|progress|, \verb|do|
+%     \item[4.] \verb| [> ... ]|, \verb| ; |
+    
+% \end{itemize}
+
+
+                       % | match_word match_clause end
+% match_clause      ::=  | goal with context_rule | ... | context_rule
+%                        | reverse goal with context_rule | ... | context_rule
+%                        | ltac_expr with match_rule | ... | match_rule
+% match_rule        ::=  | cpattern => ltac_expr
+%                        | context [ident] [ cpattern ] => ltac_expr
+%                        | _ => ltac_expr
+% context_rule      ::=  | context_hyp, ..., context_hyp |- cpattern => ltac_expr
+%                        | cpattern => ltac_expr
+%                        | |- cpattern => ltac_expr
+%                        | _ => ltac_expr
+% context_hyp       ::=  | name : cpattern
+%                        | name := cpattern [: cpattern]
+% match_word        ::=  | lazymatch
+%                        | multimatch
+%                        | match
+% \small{\textit{Пример 1. Построения индуктивного типа натуральных чисел.}}
+
+
+
+% Гипотеза -- это определение, терм которого считается построенным для этой теоремы. Также гипотеза -- это предположение в логическом исчислении конструкций. Пусть \textit{H} — это текущее множество гипотез. Цель в теореме -- это тип, терм которого нужно описать тактиками, используя гипотезы. Доказать цель означачает описать его терм тактиками.
+% Обозначим $G = \{g_1, g_2, ..., g_n\}$ как упорядоченный набор целей. 
+% Активная цель -- это цель, которая <<стоит>> первой среди всего набора целей \textit{G} либо цели, которые пользователь принудительно сделает активными для конкретной тактики. 
+% Множество $F,\ F \subseteq G$ обозначим как упорядоченный набор активных целей. Пусть \textit{E} — упорядоченное множество доступных утверждений, типов и теорем.
+% Таким образом, тройка \textit{P = (H, G, E)} есть состояние доказательства. Обозначим через $fst(a,\ b)$ первый элемент $a$ пары $(a,\ b)$.
+% Пусть \textit{g} — это пара $(\{(\Gamma_i, f_i)\},E),$ где $\Gamma_i \subseteq H$. Тактика — это отображение пары $(\{(\Gamma_i, f_i)\},E)$ в новую пару $(\{(\Gamma_i, f_i)\},E)$.
+Ниже приведена денотационная семантика языка \textit{Ltac}. 
+% $\llbracket a+b\rrbracket$
+ % \lBrack x \rBrack
+% $$ [[ l_1;l_2]] := \lambda g. \{h\ |\ h \in g и \exists u : u \in [[l_1]]\ g\ \And h \in [[l_2]]\ u \}$$
+
+
+
+$$
+
+\llbracket l_1;l_2\rrbracket (g) = \llbracket l_2\rrbracket (\llbracket l_1\rrbracket (g)) 
+\\
+
+\llbracket \ [> l_1\ |\ ...\ |\ l_i\ |\ ...\ |\ l_n ]\ \rrbracket (g) = \begin{cases} \cup_{i} \llbracket  l_i \rrbracket ((\Gamma_i, f_i)),\  & \text { если } |\{(\Gamma_i, f_i)\}| = n \\ \llbracket fail\rrbracket (g), & \text { иначе } \end{cases}
+\\
+
+\llbracket  do\ 1\ l_1 \rrbracket (g) = \llbracket  l_1 \rrbracket (g) 
+\\
+
+\llbracket  do\ n\ l_1 \rrbracket (g) = \llbracket  l_1 \rrbracket  (\llbracket  do\ n-1\ l_1 \rrbracket (g))
+\\ 
+
+\llbracket progress\ l_1\rrbracket (g) = \begin{cases} \llbracket  fail \rrbracket (g),\  & \text { если } \llbracket l_1\rrbracket (g)\ =\ g \\ \llbracket l_1\rrbracket (g), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket repeat\ l_1\rrbracket (g) = \begin{cases} g,\  & \text { если } \llbracket l_1\rrbracket (g)\ =\ g \\ \llbracket l_1\rrbracket \ (\llbracket repeat\ l_1\rrbracket (g)), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket  l_1\ ||\ l_2\rrbracket (g) = \begin{cases} \llbracket l_2\rrbracket (g),\  & \text { если } \llbracket  l_1 \rrbracket (g)\ =\ (g) \\ \llbracket l_1\rrbracket (g), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket  l_1\ + \ l_2\rrbracket (g) = \begin{cases} \llbracket l_2\rrbracket (g),\  & \text { если } \llbracket  l_1 \rrbracket (g)\ =\ \llbracket  fail \rrbracket (g) \\ \llbracket l_1\rrbracket (g), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket tryif\ l_1\ then\ l_2\ else\ l_3\ \rrbracket (g) = \llbracket (l_1;l_2)\ +\ l_3\rrbracket (g)
+\\
+
+ \llbracket first\ [l]\ \rrbracket (g) = \llbracket l\rrbracket (g)
+\\
+
+\llbracket first\ [l_1|...|l_n]\ \rrbracket (g) = \begin{cases} \llbracket first [l_2|...|l_n] \rrbracket (g),\  & \text { если } \llbracket  l_1 \rrbracket (g)\ =\ \llbracket  fail \rrbracket (g) \\ \llbracket l_1\rrbracket (g), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket solve\ [l]\ \rrbracket (g) = \begin{cases} \llbracket l\rrbracket (g),\  & \text { если } \llbracket l\rrbracket (g) = \emptyset \\ \llbracket fail\rrbracket (g), & \text { иначе } \end{cases}
+\\ \\
+
+\llbracket solve\ [l_1|...|l_n]\ \rrbracket (g) = \begin{cases} \llbracket l_1\rrbracket (g),\  & \text { если } \llbracket l_1\rrbracket (g) = \emptyset \\ \llbracket solve [l_2|...|l_n]\ \rrbracket , & \text { иначе } \end{cases}
+
+$$
+
+
+\subsection{Задача проверки моделей 
+в исчислении индуктивных конструкций}
+
+Задача проверки модели формулируется в терминах суждений о типе над определениями $\beta$ следующим образом: 
+
+$$ \Gamma \vdash m\_c:\ init\_state s /\\\ satisfies\ M\ f\ s,$$
+где $\Gamma=\{ \beta, f:form,\ M: sts,\ s: state\ M,\ satisfies: sts \xrightarrow{} form \xrightarrow{} state\ M  \}$
+где  $\beta$ = $\{ (nat,\ D(nat)),\ (sts,\ D(sts)),\ (form,\ D(form))\}$ множество определений индуктивных типов, и где
+$$D(nat)= \{ (S,\ nat \xrightarrow{}  nat),\ (O, nat)\},$$
+
+
+
+$$
+D(sts)= \{ (STS, \forall state : Type.\ \forall\ trans : state \xrightarrow{}  state \xrightarrow{}  Prop.
+$$
+$$
+       (state \xrightarrow{}  Prop) \xrightarrow{} 
+$$
+$$      
+       (nat \xrightarrow{}  state \xrightarrow{}  Prop) \xrightarrow{} 
+$$
+$$      
+       (\forall w : state, \exists\ v : state, trans\ w\ v) \xrightarrow{}  sts)\},
+$$
+
+
+
+$$
+D(form)= \{ 
+\ (fF , form)\ ,\ (fV, nat \xrightarrow{}  form)\ ,
+$$
+$$
+  (fImp,\ form \xrightarrow{}  form \xrightarrow{}  form)\ , 
+$$
+$$
+  (fAX\ , form \xrightarrow{}  form),
+$$ 
+$$
+  (fAR,\ form \xrightarrow{}  form \xrightarrow{}  form),
+$$  
+$$
+  (fAU , form \xrightarrow{}  form \xrightarrow{}  form) \}. \ 
+$$
+
+
+\textbf{Натуральное исчисление предикатов}
+
+$$ \vdash (\forall m)(\forall f)(\forall s)(satisfies(f,\ s))$$
+
+\textbf{"Изначальная"\ постановка}
+
+Для произвольных структуры Крипке M, формулы CTL phi: M |= phi.
+
+
+
+
+
+
+
+% \begin{itemize}
+
+% \item $ [[ l_1;l_2]](g) = [[l_2]]([[l_1]](g)) $
+% \item $ [[\ [> l_1\ |\ ...\ |\ l_i\ |\ ...\ |\ l_n ]\ ]](g) =$ если $|\{\Gamma_i \vdash f_i\}| = n$, то $[[ l_i ]](\Gamma_i \vdash f_i)\ $, иначе $[[fail]](g) $
+% \item $ [[ do\ 1\ l_1 ]](g) = [[ l_1 ]](g) $
+% \item $ [[ do\ n\ l_1 ]](g) = [[ l_1 ]] ([[ do\ n-1\ l_1 ]](g))$
+% \item $ [[progress\ l_1]](g)=$ если $[[l_1]](g)\ =\ g$, то $[[ fail ]](g)$, иначе $[[l_1]](g)$
+% \item $ [[repeat\ l_1]](g)=$ если $[[ progress\ l_1 ]](g)\ =\ [[fail]](g)$, то $g$, иначе $[[l_1]]\ ([[repeat\ l_1]](g)) $
+% \item $ [[ l_1\ ||\ l_2]](g)=$ если $[[ progress\ l_1 ]](g)\ =\ [[fail]](g)$, то $[[l_2]](g)\ $, иначе $[[l_1]](g)$
+% \item $ [[ l_1\ + \ l_2]](g)=$ если $[[ l_1 ]](g)\ =\ [[ fail ]](g)$, то $[[l_2]](g)$, иначе $[[l_1]](g)$
+% \item $ [[tryif\ l_1\ then\ l_2\ else\ l_3\ ]] = [[(l_1;l_2)\ +\ l_3]] $
+
+
+
+% \begin{verbatim}
+%  \lBrack x \rBrack
+% \item $ [[fun\ name_1\ ...\ name_n\ =>\ l]] := \lambda name_1.\ ...\ \lambda name_n. [[l]]$
+% \item $ [[let\ identificator\ [a_1\ ...\ a_n]\ :=\ l_b\ in\ l]]\ :=\ [[\ l[identificator\ [a_1\ ...\ a_n]/l_b]\ ]] $ 
+
+
+% \item $ [[first\ [l]\ ]](g) = [[l]](g)$
+% \item $ [[first\ [l_1|...|l_n]\ ]](g) = $ если $[[ l_1 ]](g)\ =\ [[ fail ]](g)$, то $[[first [l_2|...|l_n]]](g)$, иначе $[[l_1]](g)$
+% \item $ [[solve\ [l]\ ]](g) = $ если $[[l]](g) = (\Gamma_1 \vdash)$, то $[[tac]](g)$, иначе $[[fail]](g) $
+% \item $ [[solve\ [l_1|...|l_n]\ ]](g) = $ если $[[l_1]] = (\Gamma_1 \vdash)$, то $[[l_1]](g)$, иначе $[[solve [l_2|...|l_n]\ ]] $
+% \item $ [[guard\ test]](g) = $ если $[[test]]$, то $g$, иначе $[[fail]](g)$
+
+% \item $[[value\_tactic]]$ -- тактика, которая не меняет состояние доказательства, но позволяет получить какое-то значение о состоянии доказательства
+% \item $[[match\_word\ match\_clause\ end]]$ -- тактика, которая очень похожа с сопоставлением по шаблону в \textit{Coq}, который описан в разделе 2.1. Логика сопоставления по шаблону может быть разной. $[[lazymatch]]$ означает, что сопоставление будет использоваться по первому совпадению используемых элементов БНФ. $[[match]]$ означает, что сопоставление будет использоваться по первому совпадению, если не сработает $[[fail]]$ иначе по второму совпадению. $[[multimatch]]$ означает, что сопоставление будет использоваться по всем совпадениям последовательно и независимо. $[[goal\ with\ context\_rule\ |\ ...\ |\ context\_rule]]$ -- это сопоставление упорядоченного набора целей $\{f_i\}$ с шаблоном $context\_rule$, и $[[reversed goal\ with\ $ $context\_rule\ |\ ...\ |\ context\_rule]]$ -- такое же сопоставление и предыдущее, однако набор целей $\{f_i\}$ имеет обратный порядок. Если не нашлось ни одного совпадения,, то команда эквивалентна $[[fail]]$.
+
+% \end{itemize}
+
+\section{План дальнейших работ и ожидаемые результаты}
+Для решения поставленных задач требуется выполнить следующее:
+\begin{enumerate}
+    
+    % Уточним критерии
+    % \item[1.] Изучить <<атомарные>> тактики языка \textit{Coq} и язык тактик \textit{Ltac}
+    % \item[2.] Изучить существующие алгоритмы проверки выполнимости формулы логики \textit{CTL} на модели Крипке
+    % \item[3.] Сформулировать сигнатуру теоремы проверки модели (тип гипотез, формул и тип терма, который нужно реализовать)
+    \item[1.] Построить с помощью \textit{Ltac} автоматическую тактику для доказательства выполнимости или невыполнимости любой формулы (или для формул какого-либо достаточно нетривиального подкласса)
+    \item[2.] Обосновать полноту описанного алгоритма
+    \item[3.] Обосновать корректность описанного алгоритма
+
+\end{enumerate}
+\clearpage
+
+\addcontentsline{toc}{section}{Список литературы}%
+\begin{thebibliography}{99}%
+
+    \bibitem{Clark} Кларк Э.М., Грамберг О., Пелед Д. Верификация моделей программ: Model Checking. – М.: МЦНМО, 2002.
+    
+    \bibitem{SoftwareFoundations1} Pierce B. C. Software Foundations. Volume 1: Logical Foundations. Electronic textbook. ver. 6.1. 2021.
+    
+    \bibitem{SoftwareFoundations6} Pierce B. C. Software Foundations Volume 5: Verifiable C. Electronic textbook. ver. 6.5. 2021.
+
+    \bibitem{CoqArt} Bertot Y., Castéran P. Interactive Theorem Proving and Program Development: Coq’Art: The Calculus of Inductive Constructions. Springer, 2004.
+
+    \bibitem{CompCert} Blazy S., Leroy X. Formal verification of a memory model for C-like imperative languages. In International Conference on Formal Engineering Methods (ICFEM 2005), vol. 3785, p. 280-299. Springer, 2005.
+    
+    \bibitem{mathcomp}The Mathematical Components Library [Электронный ресурс]. - Электрон. дан. - URL: \URL{https://github.com/math-comp/math-comp}. (дата обращения 21.05.2022)
+    
+    \bibitem{2003} Coupet-Grimal S. An Axiomatization of Linear Temporal Logic in the Calculus of Inductive Constructions. Journal of Logic and Computation, vol. 13, p. 801–813, 2003.
+    
+    \bibitem{2003github} Linear temporal logic. Repository. [Электронный ресурс]. - Электрон. дан. - URL: \URL{https://github.com/coq-contribs/ltl}. (дата обращения 21.05.2022)
+
+    \bibitem{Ltac} Ltac. Documentation. [Электронный ресурс]. - Электрон. дан. - URL: \URL{https://coq.inria.fr/refman/proof-engine/ltac.html}. (дата обращения 14.12.2022)
+    
+    \bibitem{thesis} Doczkal C. A Machine-Checked Constructive Metatheory of Computation Tree Logic. Dissertation, 2015.
+
+    \bibitem{thesisgithub}Completeness and Decidability of Modal Logic Calculi [Электронный ресурс]. - Электрон. дан. - URL: \URL{https://github.com/coq-community/comp-dec-modal}. (дата обращения 21.05.2022)
+    
+    \bibitem{2007} Tsai, MH., Wang, BY. Formalization of CTL* in Calculus of Inductive Constructions. Secure Software and Related Issues. ASIAN 2006. Lecture Notes in Computer Science, vol. 4435. Springer, 2007.
+
+    \bibitem{Coquand}T. Coquand, Gérard Huet. The calculus of constructions. INRIA, 1986.
+    
+\end{thebibliography}
+  
+\end{document}
