@@ -110,15 +110,34 @@ i -- индекс конструктора.
 Первая конструкция -- это сопоставление по шаблону
 (pattern-matching)
 Пусть 
+    ∀ i, FV(f_i) = {u_i1, ... , u_im}
+    t : I parameters j -- j-ый конструктор индуктивного типа I parameters
+    верно ∀ k, x : I parameters k ⊢ P : s′
+    ∀ i, x_i1 : A1 ... x_im : Am ⊢ f_i : P{k/i}{x/(c_i x_i1 ...x_im)}
+    c_i -- i-ый конструктор индуктивного типа I parameters
+    x_i1 : A1 ... x_im : Am -- его аргументы
+    
 
-Синтаксис сопоставления по шаблону 
-match t as x in I pars y return P 
+Тогда будем считать следующую запись корректной
+match t as x in (I parameters) return P 
 with
-c_1 x_11 ...x_1m => f_1
+c_1 x_11 ... x_1m => f_1{u_11/x_11}..{u_1m/x_1m}
 ...
-c_n x_n1 ...x_nm => f_n
-end : P[y/τ,x/t], где 
+c_n x_n1 ... x_nm => f_n{u_n1/x_n1}..{u_nm/x_nm}
+end: : P{x/t}{k/j}
 
-t : I pars τ
-y, x:I pars y ⊢ P :s′
-{xi1 : A1 ... xim : Am ⊢ f_i : P[y/u,x/(c_i xi1 ...x im)]}i
+Обозначим эту запись через m.
+
+
+Эта запись означает отображение терма t с именем x
+индуктивного типа I parameters в терм f_j типа P{x/t}{k/j}, 
+если терм t есть j-ый конструктор индуктивного типа I parameters.
+Тип этого отображения Πx:I parameters, P.
+
+Правило τ-редукции 
+(m) t: I parameters k  ->_τ f_k{u_k1/x_k1}..{u_km/x_km}
+
+
+
+
+
