@@ -73,10 +73,14 @@ constructors -- множество термов или кострукторов,
 которые имеют имя constr_i ∈ Constr и тип с_i:
 constructors = {constr_i: с_i}.
 
+
 Ar строится следующим образом
 Π(y1 : B1)..(yp : Bp),s, где s ∈ Sorts.
 с_i строится следующим образом
-Π(x_i1 : A_i1)..(y_ik : A_ik), I parameters
+Π(x_i1 : A_i1)..(y_ik : A_ik), I parameters i
+i -- индекс конструктора.
+(Вот тут расходится тип конструктора 
+и самого объявления индуктивного типа)
 
 Тип c_i коструктора constr_i 
 имеет следующие ограничения
@@ -105,11 +109,16 @@ Ar строится следующим образом
 
 Первая конструкция -- это сопоставление по шаблону
 (pattern-matching)
-Синтаксис сопоставления по шаблону 
-match t as x in I y1 ...yp return P 
-with 
-с_1 x1 ...xn => f_1
-...
-с_n x1 ...xn => f_n
-end : P[t1/y1,...,tp/yp,t/x]
+Пусть 
 
+Синтаксис сопоставления по шаблону 
+match t as x in I pars y return P 
+with
+c_1 x_11 ...x_1m => f_1
+...
+c_n x_n1 ...x_nm => f_n
+end : P[y/τ,x/t], где 
+
+t : I pars τ
+y, x:I pars y ⊢ P :s′
+{xi1 : A1 ... xim : Am ⊢ f_i : P[y/u,x/(c_i xi1 ...x im)]}i
