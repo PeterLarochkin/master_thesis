@@ -1,34 +1,32 @@
-(* (c) Copyright Christian Doczkal, Saarland University                   *)
-(* Distributed under the terms of the CeCILL-B license                    *)
+Definition cAX: forall X : Type, (X -> X -> Prop) -> (X -> Prop) -> X -> Prop := 
+fun (X : Type) (e : X -> X -> Prop) (p : X -> Prop) (w : X) =>
+forall v : X, e w v -> p v.
 
-Section Characterizations.
+(* ? *)
+Definition path: forall X : Type, (X -> X -> Prop) -> (nat -> X) -> Prop := 
+fun (X : Type) (e : X -> X -> Prop) (pi : nat -> X) =>
+forall n : nat, e (pi n) (pi (S n)).
 
-Variables (X : Type) (e : X -> X -> Prop).
-Definition cAX (p : X -> Prop) (w : X) : Prop := forall v, e w v -> p v.
-Definition path (pi : nat -> X) := forall n, e (pi n) (pi (S n)).
+Definition p_until: forall X : Type, (X -> Prop) -> (X -> Prop) -> (nat -> X) -> Prop := 
+fun (X : Type) (p q : X -> Prop) (pi : nat -> X) =>
+exists n : nat, forall m : nat, m < n -> p (pi m) & q (pi n).
 
-Definition pcons (x : X) pi (k : nat) := 
-match k with
-| 0 => x
-| S k0 => pi k0 
-end.
+Definition p_release: forall X : Type, (X -> Prop) -> (X -> Prop) -> (nat -> X) -> Prop := 
+fun (X : Type) (p q : X -> Prop) (pi : nat -> X) =>
+forall n : nat, (exists m : nat, m < n & p (pi m)) \/ q (pi n).
 
-Definition ptail (pi : nat -> X) (k:nat) : X := pi (S k).
+Definition pAU : forall X : Type,
+(X -> X -> Prop) -> (X -> Prop) -> (X -> Prop) -> X -> Prop := 
+  fun (X : Type) (e : X -> X -> Prop) (p q : X -> Prop) (w : X) =>
+  forall pi : nat -> X, path X e pi -> pi 0 = w -> p_until X p q pi.
 
-Definition p_until (p q : X -> Prop) pi := 
-  exists2 n, forall m, m < n -> p (pi m) & q (pi n).
+Definition pAR: forall X : Type,
+(X -> X -> Prop) -> (X -> Prop) -> (X -> Prop) -> X -> Prop := 
+fun (X : Type) (e : X -> X -> Prop) (p q : X -> Prop) (w : X) =>
+forall pi : nat -> X, path X e pi -> pi 0 = w -> p_release X p q pi.
 
-Definition p_release (p q : X -> Prop) pi := 
-  forall n, (exists2 m, m < n & p (pi m)) \/ q (pi n).
 
-Definition pAU (p q : X -> Prop) (w : X) : Prop := 
-  forall pi, path pi -> pi 0 = w -> p_until p q pi.
 
-Definition pAR (p q : X -> Prop) (w : X) : Prop := 
-  forall pi, path pi -> pi 0 = w -> p_release p q pi.
-
-End Characterizations.
-Check cAX.
 
 Definition var := nat.
 
@@ -41,24 +39,20 @@ Inductive form : Set :=
 | fAU : form -> form -> form.
 
 Record sts := STS {
-  state  :> Type;
+  state  : Type;
   trans  : state -> state -> Prop;
   label  : var -> state -> Prop;
   serial : forall w:state, exists v, trans w v
 }.
 
-Arguments trans {s} _ _.
-(* Prenex Implicits trans. *)
-Arguments cAX [X]%type_scope (e p)%function_scope w.
-Arguments pAR [X]%type_scope (e p q)%function_scope w.
-Arguments pAU [X]%type_scope (e p q)%function_scope w.
-Arguments label [s] _ _.
-Fixpoint satisfies (M : sts) (s : form) := 
+Definition satisfies: forall M : sts, form -> state M -> Prop := 
+fix satisfies (M : sts) (s : form) {struct s} : state M -> Prop :=
 match s with
-| fF       => (fun _ => False)
-| fV v     => label v
-| fImp s t => (fun w => satisfies M s w -> satisfies M t w)
-| fAX s    => cAX (@trans M) (satisfies M s)
-| fAR s t  => pAR trans (satisfies M s) (satisfies M t)
-| fAU s t  => pAU trans (satisfies M s) (satisfies M t)
-end.  
+| fF => fun w : state M => False
+| fV v => label M v
+| fImp s0 t => fun w : state M => satisfies M s0 w -> satisfies M t w
+| fAX s0 => cAX (state M) (trans M) (satisfies M s0)
+| fAR s0 t => pAR (state M) (trans M) (satisfies M s0) (satisfies M t)
+| fAU s0 t => pAU (state M) (trans M) (satisfies M s0) (satisfies M t)
+end.
+	 
