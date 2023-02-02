@@ -64,6 +64,7 @@ Inductive form : Set :=
 Record sts := STS {
   state  : Type;
   trans  : state -> state -> Prop;
+  init   : state -> Prop;
   label  : nat -> state -> Prop;
   serial : forall w:state, exists v, trans w v
 }.
@@ -78,4 +79,61 @@ match s with
 | fAR  s0 t => pAR (state M) (trans M) (satisfies M s0) (satisfies M t)
 | fAU  s0 t => pAU (state M) (trans M) (satisfies M s0) (satisfies M t)
 end.
+
+Inductive bool : Set :=  true : bool | false : bool.
+
+Definition trans_bool (s1:bool)(s2:bool):Prop := 
+match s1, s2 with 
+| true, false => True 
+| false, true => True
+| _, _ => False
+end.
+Check Nat.eqb.
+Definition label_bool(v: nat)(s:bool):Prop :=
+if  Nat.eqb (Nat.modulo v 2) 0
+then 
+match s with 
+| true => True
+| false => False
+end
+else 
+match s with 
+| true => False
+| false => True
+end
+.
+Definition serial_bool: forall w:bool, exists v, trans_bool w v.
+intros. case w. all: [>eexists false | eexists true]; compute; apply I.
+Defined.  
+
+Definition init_bool(s: bool):Prop := s=true.
+Definition model_bool: sts :=  {| state := bool; trans := trans_bool; init:= init_bool; label := label_bool; serial := serial_bool |}.
+
+Print eq.
+
+Theorem check1: forall st: state model_bool, (init model_bool) st -> @satisfies(model_bool) (fAX (( (fV 1)))) st.
+Proof.
+  compute.
+  intros.
+  rewrite H in H0.
+  apply H0.
+Qed.
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+
+  
+
+  
+
+Qed.
 	 
