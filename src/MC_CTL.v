@@ -106,17 +106,20 @@ Definition serial_bool: forall w:bool, exists v, trans_bool w v.
 intros. case w. all: [>eexists false | eexists true]; compute; apply I.
 Defined.  
 
-Definition init_bool(s: bool):Prop := s=true.
+Definition init_bool(s: bool):Prop := match s with true => True | false => False end.
 Definition model_bool: sts :=  {| state := bool; trans := trans_bool; init:= init_bool; label := label_bool; serial := serial_bool |}.
 
 Print eq.
 
-Theorem check1: forall st: state model_bool, (init model_bool) st -> @satisfies(model_bool) (fAX (( (fV 1)))) st.
+Theorem check1: forall st: state model_bool, 
+(init model_bool) st -> 
+satisfies(model_bool) (fAX (( (fV 1)))) st.
 Proof.
   compute.
   intros.
-  rewrite H in H0.
-  apply H0.
+  destruct v.
+  destruct st. 
+  all:repeat auto.
 Qed.
   
   
