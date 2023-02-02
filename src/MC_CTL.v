@@ -5,16 +5,15 @@ Section Characterizations.
 
 Variables (X : Type) (e : X -> X -> Prop).
 Definition cAX (p : X -> Prop) (w : X) : Prop := forall v, e w v -> p v.
-Implicit Type (pi : nat -> X).
-Definition path pi := forall n, e (pi n) (pi (S n)).
-About path.
+Definition path (pi : nat -> X) := forall n, e (pi n) (pi (S n)).
 
 Definition pcons (x : X) pi (k : nat) := 
 match k with
 | 0 => x
-| S k0 => pi k0 end.
+| S k0 => pi k0 
+end.
 
-Definition ptail pi k := pi (S k).
+Definition ptail (pi : nat -> X) (k:nat) : X := pi (S k).
 
 Definition p_until (p q : X -> Prop) pi := 
   exists2 n, forall m, m < n -> p (pi m) & q (pi n).
@@ -29,6 +28,7 @@ Definition pAR (p q : X -> Prop) (w : X) : Prop :=
   forall pi, path pi -> pi 0 = w -> p_release p q pi.
 
 End Characterizations.
+Check cAX.
 
 Definition var := nat.
 
