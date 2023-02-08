@@ -2,7 +2,7 @@
 (* 
 
 Inductive ex (A:Type) (P: A -> Prop) : Prop :=
-  ex_intro : forall x:A, P x -> ex A P.
+  ex_intro : forall x:A, forall _: P x, ex A P.
 Inductive ex2 (A:Type) (P Q:A -> Prop) : Prop :=
   ex_intro2 : forall x:A, P x -> Q x -> ex2 A P Q.
 
@@ -22,6 +22,8 @@ Inductive or (A B : Prop) : Prop :=
 Notation "A \/ B" := (or A B).
 
 *)
+Check eq _ _ -> eq _ _ .
+Print ex_intro.
 
 Definition cAX: forall X : Type, 
 (X -> X -> Prop) -> (X -> Prop) -> X -> Prop := 
@@ -68,58 +70,48 @@ Record sts := STS {
   label  : nat -> state -> Prop;
   serial : forall w:state, exists v, trans w v
 }.
+(* Inductive nat : Set :=  S : nat -> nat. *)
+Check ex.
 
-Definition satisfies: forall M : sts, form -> state M -> Prop := 
-fix satisfies (M : sts) (s : form) {struct s} : state M -> Prop :=
-match s with
-| fF        => fun w : state M => False
-| fV v      => label M v
-| fImp s0 t => fun w : state M => satisfies M s0 w -> satisfies M t w
-| fAX  s0   => cAX (state M) (trans M) (satisfies M s0)
-| fAR  s0 t => pAR (state M) (trans M) (satisfies M s0) (satisfies M t)
-| fAU  s0 t => pAU (state M) (trans M) (satisfies M s0) (satisfies M t)
-end.
+
+Fixpoint satisfies (M : sts) (s : form){struct s}:state M -> Prop := 
+  (match s with
+  | fF        => fun w : state M => False
+  | fV v      => label M v
+  | fImp s0 t => fun w : state M => satisfies M s0 w -> satisfies M t w
+  | fAX  s0   => cAX (state M) (trans M) (satisfies M s0)
+  | fAR  s0 t => pAR (state M) (trans M) (satisfies M s0) (satisfies M t)
+  | fAU  s0 t => pAU (state M) (trans M) (satisfies M s0) (satisfies M t)
+  end: state M -> Prop ).
+
+Print False.
+
 
 Inductive bool : Set :=  true : bool | false : bool.
 
-Definition trans_bool (s1:bool)(s2:bool):Prop := 
-match s1, s2 with 
-| true, false => True 
-| false, true => True
-| _, _ => False
-end.
-Check Nat.eqb.
-Definition label_bool(v: nat)(s:bool):Prop :=
-if  Nat.eqb (Nat.modulo v 2) 0
-then 
-match s with 
-| true => True
-| false => False
-end
-else 
-match s with 
-| true => False
-| false => True
-end
-.
+Definition trans_bool (s1:bool)(s2:bool):Prop := ~ (s1 = s2).
+Definition label_bool(v: nat)(s:bool):Prop := v = (match s with | false => 0 | true => 1 end).
 Definition serial_bool: forall w:bool, exists v, trans_bool w v.
-intros. case w. all: [>eexists false | eexists true]; compute; apply I.
+intros. case w; [> eexists false|eexists true] ;compute;discriminate.
 Defined.  
 
-Definition init_bool(s: bool):Prop := match s with true => True | false => False end.
+Definition init_bool(s: bool):Prop := s = false.
 Definition model_bool: sts :=  {| state := bool; trans := trans_bool; init:= init_bool; label := label_bool; serial := serial_bool |}.
-
-Print eq.
 
 Theorem check1: forall st: state model_bool, 
 (init model_bool) st -> 
 satisfies(model_bool) (fAX (( (fV 1)))) st.
 Proof.
   compute.
-  intros.
-  destruct v.
-  destruct st. 
-  all:repeat auto.
+  intros. destruct v. auto. apply H0 in H. refine (match H with end).
+Defined.
+
+  
+  
+  
+  
+  
+  
 Qed.
   
   

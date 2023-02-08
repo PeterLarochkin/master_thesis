@@ -145,25 +145,25 @@ $$term ::=\ x\ |\ s\ |\ (\lambda\ (x : term).\ term)\ |\ (term\ term)\ |\ \Pi (x
 Каждый терм, построенный согласно описанной выше БНФ, 
 ставится в соответствии типу (или имеет тип), который также является термом.
 
-Запись <<$y:K$>> обозначает, что переменная $y$ имеет тип $K$.
+Запись <<$y:K$>> обозначает, что терм обозначенный через переменную $y$ имеет тип $K$.
 
 Пусть термы, которые обозначены через переменные $x_1, ..., x_n$, 
-имеют тип $A_1, ..., A_n$, тогда множество $\Gamma = [x_1:A_1, x_2:A_2, ..., x_n: A_n]$ называется контекстом.
+имеют тип $A_1, ..., A_n$, пусть $t_1, ..., t_m$ термы, которые имеют типы $B_1, ..., B_m$ и обозначаются через переменные $y_1, ..., y_m$ тогда множество $\Gamma = [x_1:A_1, x_2:A_2, ..., x_n: A_n, y_1:= t_1:B_1, ..., y_m:= t_m:B_m]$ называется контекстом.
 
 Запись $t\{x/u\}$ обозначает терм $t$, в котором свободная переменная $x$ заменена на терм $u$, который имеет такой же тип.
-Cуждения о типе -- это запись:
+Cуждения о типе -- это запись 
 $$\Gamma \vdash t: A,$$ 
-где $\Gamma$ -- это контекст, $\ t$ -- это терм, который имеет тип $A$ (который называется заключением).
+где $\Gamma$ -- это контекст, $\ t$ -- это терм, который имеет тип $A$.
 
 Эта запись означает следующее высказывание
 <<в предположении, 
-что переменные $x_i$ имеют тип $A_i$, терм $t$ имеет тип $A$>>
+что переменные $x_i$ имеют тип $A_i$ и термы $t_j$ имеют тип $B_j$, терм $t$ имеет тип $A$>>.
 Формулы исчисления конструкций -- это суждения о типе.
 Правила вывода исчисления конструкций:
 $$Rules$$
 
-Согласно правилам вывода 
-строятся суждения от том, какого типа терм.
+% Согласно правилам вывода 
+% строятся суждения от том, какого типа терм.
 
 Через $FV(M)$ обозначим множество свободных переменных в терме $M$.
 \begin{itemize}
@@ -177,20 +177,17 @@ $$Rules$$
 записанного как $term_1$, к аргументу, 
 записанному как $term_2$ /*взял со слайдов*/
 
-    \item Запись<<$(term_1\ term_2)$>> обозначает результат 
-применения отображения,
-записанного как $term_1$, к аргументу, 
-записанному как $term_2$ /*взял со слайдов*/
-
     \item Запись <<$\Pi (x:term_1),\ term_2$>> 
 обозначает семейство типов (термов)
-параметризованных термом x. /*со слайдов из вики, там есть более формальное определение как страшное множество */
+параметризованных переменной x. /*со слайдов из вики, там есть более формальное определение как страшное множество */
 
+    \item Запись <<$A \xrightarrow{} B$>> обозначает $\Pi x:A. B$, где $x \notin FV(B)$.
+    
     \item Запись <<$x$>> обозначает терм обозначенный именем $x$, имеющий тип, заданный контекстом
     
     \item Запись <<$s$>> обозначает тип из заданного множества $Sorts$, тип которого определяется согласно правилам вывода.
     
-    \item Запись <<$A \xrightarrow{} B$>> обозначает $\Pi x:A. B$, где $x \notin FV(B)$.
+    
 \end{itemize}
 
 
@@ -203,43 +200,45 @@ $$(\lambda\ (x: A).\ M)\ N \xrightarrow{\beta} M\{x/N\}$$
 /*скорее всего, нужно убрать*/
 
 
-\subsection{Исчисление индуктивных конструкций.}
+\subsubsection{Исчисление индуктивных конструкций.}
 Пусть $Names$ и $Constr$ -- это соответственно множество имен типов и имен конструкторов /*или просто имен?*/, 
 
 Индуктивный тип -- это пара $$(I\ parameters:\ Ar,\ constructors),$$ где
 
-$I \in Names$ -- имя индуктивного типа,
-
-$parameters$ -- это параметры $p_1:P_1$, ..., $p_n:P_n$,
-
-$Ar$ -- это тип этого индуктивного типа,
-
-$constructors$ -- множество конструкторов, 
+\begin{itemize}
+    \item $I,\ I \in Names$ -- имя индуктивного типа,
+    \item $parameters$ -- это параметры $p_1:P_1$, ..., $p_n:P_n$ индуктивного типа $I$,
+    \item $Ar$ -- это тип этого индуктивного типа,
+    \item $constructors$ -- множество конструкторов, 
 которые имеют имя $constr_i \in Constr$ и тип $c_i$,
 $constructors = \{constr_i: c_i\}$.
+\end{itemize}
+
+
+
+
+
+
+
 
 Индуктивный тип строится по следующим правилам:
 \begin{itemize}
-    \item $Ar$ строится следующим образом
+    \item $Ar$ -- это тип вида
 $\Pi(y_1 : B_1)..(y_p : B_p),s,$ где $s \in Sorts$
-    \item $c_i$ строится следующим образом
-$\Pi(x_i_1 : A_i_1)..(y_i_k : A_i_k),\ I\ parameters\ i,$
-где $i$ -- индекс конструктора
+    \item $c_i$ -- это тип вида
+$\Pi(x_{i1} : A_{i1})..(x_{ik} : A_{ik}),\ I\ parameters.$
 
-/* Вот тут расходится тип конструктора 
-и самого объявления индуктивного типа, + непонимание того, зачем нужны индексы в таком количестве */
     \item Тип $c_i$ коструктора $constr_i$ имеет следующие ограничения:
     \begin{enumerate}
-        \item Если $c_i$ не является типом $Prop$, 
-тогда каждый тип $A_i_j$ имеет тип $c_i$ или имеет тип $Prop$
-        \item Если $c_i$ является типом $Prop$,
-!проблема!
-        \item выполнение условия <<позитивности>> для типов $A_i_j$ 
+%         \item Если $c_i$ не является типом $Prop$, 
+% тогда каждый тип $A_{ij}$ имеет тип $c_i$ или имеет тип $Prop$
+
+        \item Условия <<позитивности>> для типов $A_{ij}$ 
 относительно появления самого индуктивного типа $I$
 в одном из следующих случаев:
         \begin{itemize}
-            \item $I$ не появляется в $A_i_j$ 
-            \item $A_i_j\ =\ I\ t_1\ ...\ t_p,\ I \notin t_k$
+            \item $I$ не появляется в $A_{ij}$ 
+            \item $A_{ij}\ =\ I\ t_1\ ...\ t_p,\ I \notin t_k$
             \item $A_i = \Pi z:B_1, B_2$ ($I \notin B_1$, для $I$ выполнено условие позитивности в $B_2$)
             \item $A_i\ =\ J\ t_1\ ...\ t_q$, где $J$ другой индуктивный тип с параметрами $X_1$, ... $X_r$, 
             условие позитивности должно выполнятся
@@ -248,62 +247,62 @@ $\Pi(x_i_1 : A_i_1)..(y_i_k : A_i_k),\ I\ parameters\ i,$
     \end{enumerate}
 \end{itemize}
 
+Обозначим через $\Gamma_I$, где $I$ -- имя индуктивного типа, контекст вида $$\Gamma_I = [I\ parameters: Ar, constr_1: c_1, ..., \ constr_m: c_m].$$
 
-Введение понятия индуктивного типа позволяет 
-внести дополнительно две функциональные конструкции.
+Множество термов $t$ индуктивного типа $I\ parameters$ -- это термы $t$, для которых можно вывести, согласно правилам вывода, следующее суждение о типе:
+$$\Gamma_I \vdash t: I\ parameters$$
 
-Первая конструкция -- это сопоставление по шаблону
-(\textit{pattern-matching})
-Пусть 
 
-    $f_1,...,f_n$ -- термы типа P
+
+
+
+
+% Введение понятия индуктивного типа позволяет 
+% внести дополнительно две функциональные конструкции.
+
+% Первая конструкция -- это сопоставление по шаблону
+% (\textit{pattern-matching})
+% Пусть 
+
+%     $f_1,...,f_n$ -- термы типа P
     
-    для каждого $i,$ множество $\ FV(f_i)\ =\ \{u_{i_1}, ... , u_{i_m}\}$
+%     для каждого $i,$ множество $\ FV(f_i)\ =\ \{u_{i_1}, ... , u_{i_m}\}$
     
-    $t\ :\ I\ parameters\ j$ -- $j$-ый конструктор индуктивного типа $I\ parameters$
+%     $t\ :\ I\ parameters\ j$ -- $j$-ый конструктор индуктивного типа $I\ parameters$
     
-    для каждого $k,$ $\ x\ :\ I\ parameters\ k\ \vdash\ P\ :\ s′$
+%     для каждого $k,$ $\ x\ :\ I\ parameters\ k\ \vdash\ P\ :\ s′$
     
-    для каждого $i,$ верно суждение о типе $\ x_{i_1}\ :\ A_1,..., x_{i_m} : A_m \vdash f_i : P\{k/i\}\{x/(c_i x_{i_1} ...x_{i_m})\}$
+%     для каждого $i,$ верно суждение о типе $\ x_{i_1}\ :\ A_1,..., x_{i_m} : A_m \vdash f_i : P\{k/i\}\{x/(c_i x_{i_1} ...x_{i_m})\}$
     
-    $c_i$ -- $i$-ый конструктор индуктивного типа $I\ parameters$,
+%     $c_i$ -- $i$-ый конструктор индуктивного типа $I\ parameters$,
     
-    $x_{i_1}\ :\ A_1 ... x_{i_m}\ :\ A_m$ -- его аргументы
+%     $x_{i_1}\ :\ A_1 ... x_{i_m}\ :\ A_m$ -- его аргументы
     
 
-\newpage
-Тогда будем считать следующую запись корректной
-\begin{verbatim}
-match t as x in (I parameters) return P  
-with
-| c_1 x_1_1 ... x_1_m => f_1{u_1_1/x_1_1}...{u_1_m/x_1_m} 
-...
-| c_n x_n_1 ... x_n_m => f_n{u_n_1/x_n_1}..{u_n_m/x_n_m}
-end: P{x/t}{k/j}
-\end{verbatim}
+% \newpage
+% Будем считать термом следующую запись
+% \begin{verbatim}
+% match t as x in (I parameters) return P  
+% with
+% | c_1 x_1_1 ... x_1_m => f_1{u_1_1/x_1_1}...{u_1_m/x_1_m} 
+% ...
+% | c_n x_n_1 ... x_n_m => f_n{u_n_1/x_n_1}..{u_n_m/x_n_m}
+% end: P{x/t}{k/j}
+% \end{verbatim}
  
 
 
-Обозначим эту запись через m.
+% Обозначим эту запись через m.
 
 
-Эта запись означает отображение терма $t$ с именем $x$
-индуктивного типа $I\ parameters$ в терм $f_j$ типа $P\{x/t\}\{k/j\}$, 
-если терм $t$ есть $j$-ый конструктор индуктивного типа $I\ parameters$.
-Тип этого отображения $\Pi x:I\ parameters,\ P$.
+% Эта запись означает отображение терма $t$ с именем $x$
+% индуктивного типа $I\ parameters$ в терм $f_j$ типа $P\{x/t\}\{k/j\}$, 
+% если терм $t$ есть $j$-ый конструктор индуктивного типа $I\ parameters$.
+% Тип этого отображения $\Pi x:I\ parameters,\ P$.
 
-Правило $??$-редукции 
-$$(m)\ t:\ I\ parameters\ k\  \xrightarrow{??}\ f_k\{u_{k_1}/x_{k_1}\}...\{u_{k_m}/x_{k_m}\}$$
-/*скорее всего, нужно убрать*/
-
-
-
-
-
-
-% \subsubsection{Исчисление индуктивных конструкций}
-
-
+% Правило $??$-редукции 
+% $$(m)\ t:\ I\ parameters\ k\  \xrightarrow{??}\ f_k\{u_{k_1}/x_{k_1}\}...\{u_{k_m}/x_{k_m}\}$$
+% /*скорее всего, нужно убрать*/
 
 
 \subsubsection{Соответствие Карри--Говарда}
@@ -314,7 +313,98 @@ $$\frac{\Gamma \vdash A, \Gamma \vdash A \xrightarrow{} B}{\Gamma \vdash B}$$
 
 $$\frac{\Gamma \vdash E_1:A, \Gamma \vdash E_2: A \xrightarrow{} B}{\Gamma \vdash E_2\ E_1 :B}$$ из исчисления конструкций.
 
+\subsection{Задача MC-CTL}
 
+
+% Inductive ex (A:Type) (P: A -> Prop) : Prop :=
+%   ex_intro : forall x:A, P x -> ex A P.
+% Inductive ex2 (A:Type) (P Q:A -> Prop) : Prop :=
+%   ex_intro2 : forall x:A, P x -> Q x -> ex2 A P Q.
+% Введем обозначение "exists y: A, p", которое означает следующий тип
+% ex A (fun y => p)
+
+
+% Введем обозначение  "exists2 x : A, p & q" , которое означает следующий тип 
+% (ex2 A (fun x => p) (fun x => q))
+  
+% Inductive and (A B : Prop) : Prop :=
+% | conj : A -> B -> and A B.
+% Введем обозначение  "A /\ B", которое означает следующий тип 
+% (and A B).
+% Inductive or (A B : Prop) : Prop :=
+% | or_introl : A -> or A B 
+% | or_intror : B -> or A B.
+% Введем обозначение  "A \/ B" , которое означает следующий тип 
+% (or A B).
+
+% Definition cAX: forall X : Type, 
+% (X -> X -> Prop) -> (X -> Prop) -> X -> Prop := 
+%   fun (X : Type) (e : X -> X -> Prop) (p : X -> Prop) (w : X) =>
+%   forall v : X, e w v -> p v.
+
+
+
+% Definition path: forall X : Type, (X -> X -> Prop) -> (nat -> X) -> Prop := 
+% fun (X : Type) (e : X -> X -> Prop) (pi : nat -> X) =>
+% forall n : nat, e (pi n) (pi (S n)).
+
+% Definition p_until: forall X : Type,
+% (X -> Prop) -> (X -> Prop) -> (nat -> X) -> Prop := 
+%   fun (X : Type) (p q : X -> Prop) (pi : nat -> X) =>
+%   exists2 n : nat, forall m : nat, m < n -> p (pi m) & q (pi n).
+
+% Definition p_release: forall X : Type, 
+% (X -> Prop) -> (X -> Prop) -> (nat -> X) -> Prop := 
+%   fun (X : Type) (p q : X -> Prop) (pi : nat -> X) =>
+%   forall n : nat, (exists2 m : nat, m < n & p (pi m)) \/ q (pi n).
+
+% Definition pAU : forall X : Type,
+% (X -> X -> Prop) -> (X -> Prop) -> (X -> Prop) -> X -> Prop := 
+%   fun (X : Type) (e : X -> X -> Prop) (p q : X -> Prop) (w : X) =>
+%   forall pi : nat -> X, path X e pi -> (pi 0 = w) -> p_until X p q pi.
+
+% Definition pAR: forall X : Type,
+% (X -> X -> Prop) -> (X -> Prop) -> (X -> Prop) -> X -> Prop := 
+% fun (X : Type) (e : X -> X -> Prop) (p q : X -> Prop) (w : X) =>
+% forall pi : nat -> X, path X e pi -> (pi 0 = w) -> p_release X p q pi.
+
+
+% Inductive form : Set :=
+% | fF    : form
+% | fV    : nat -> form
+% | fImp  : form -> form -> form
+% | fAX   : form -> form
+% | fAR   : form -> form -> form 
+% | fAU   : form -> form -> form.
+
+% Record sts := STS {
+%   state  : Type;
+%   trans  : state -> state -> Prop;
+%   init   : state -> Prop;
+%   label  : nat -> state -> Prop;
+%   serial : forall w:state, exists v, trans w v
+% }.
+
+% Definition satisfies: forall M : sts, form -> state M -> Prop := 
+% fix satisfies (M : sts) (s : form) {struct s} : state M -> Prop :=
+% match s with
+% | fF        => fun w : state M => False
+% | fV v      => label M v
+% | fImp s0 t => fun w : state M => satisfies M s0 w -> satisfies M t w
+% | fAX  s0   => cAX (state M) (trans M) (satisfies M s0)
+% | fAR  s0 t => pAR (state M) (trans M) (satisfies M s0) (satisfies M t)
+% | fAU  s0 t => pAU (state M) (trans M) (satisfies M s0) (satisfies M t)
+% end.
+\begin{verbatim}
+Пусть
+Г = Г_or U Г_and U Г_ex U Г_ex2 U Г_sts U Г_form,
+[
+model := model_t: sts,
+formula:= formula: form
+]
+
+Г |- t: forall st: state model, (init model) st -> satisfies model formula st
+\end{verbatim}
 
 
 
