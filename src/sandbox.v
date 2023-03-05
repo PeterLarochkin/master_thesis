@@ -75,6 +75,9 @@ Proof.
   auto.
 Qed.
 
+Print Logic.not.
+Locate "~".
+
 
 
 
