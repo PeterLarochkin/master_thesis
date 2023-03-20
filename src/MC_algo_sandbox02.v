@@ -71,7 +71,7 @@ Admitted.
 (* pose proof (is_path_l 1) as is_path_st_l.
   compute in is_path_st_l. *)
 
-Theorem f1au: forall st: state model_triangle, 
+Theorem F1AU: forall st: state model_triangle, 
 (init model_triangle) st -> 
 satisfies (model_triangle) (fAU (fV 1)(fV 0)) st.
 Proof.
@@ -88,7 +88,6 @@ Proof.
   let first_state:= fresh "first_state" in
   intro first_state.
   compute.
-  
   eexists 2 (*n*).
   {
     let m := fresh "m" in
@@ -96,56 +95,42 @@ Proof.
     let le_m := fresh "le_m" in
     intro le_m.
     repeat split.
-    intro pre.
-    assert (le_S_S: forall m, (S m) <= 2 (*n*)-> m = 1 \/ m = 0). lia.
-    apply le_S_S in le_m.
-    destruct le_m. rewrite H in pre.
-    rewrite init_l in first_state.
-    pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
-    repeat let a := fresh "is_path_pi_0" in
-    destruct is_path_pi_0 as (a&is_path_pi_0).
-    apply is_path_pi_0 in first_state.
-    rewrite first_state in pre.
-    discriminate.
-
-    rewrite init_l in first_state.
-    rewrite H in pre. 
-      rewrite first_state in pre.
-      discriminate.
+    {
+      intro pre.
+      assert (le_S_S: forall m, (S m) <= 2 (*n*)-> m = 1 \/ m = 0). lia.
+      apply le_S_S in le_m.
+      destruct le_m.
+      { (*case k < m*)
+        rewrite H in pre.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0); 
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate).
+      }
+      {  (*case 0 = m*)
+        rewrite H in pre.
+        rewrite init_l in first_state.
+        rewrite first_state in pre. discriminate.
+      }
+    }
   }
   {
-
-    repeat split.
-    {
-    intro pre. pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
-    repeat let a := fresh "is_path_pi_0" in
-    destruct is_path_pi_0 as (a&is_path_pi_0).
-
-    rewrite init_l in first_state.
-
-    pose proof (is_path_pi 1) as is_path_pi_1_. compute in is_path_pi_1_. 
-    repeat let a := fresh "is_path_pi_1_" in
-    destruct is_path_pi_1_ as (a&is_path_pi_1_).
-    
-    apply is_path_pi_0 in first_state.
-    apply is_path_pi_1_0 in first_state.
-    rewrite first_state in pre. discriminate.
-    } 
-    {
-    intro pre. pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
-    repeat let a := fresh "is_path_pi_0" in
-    destruct is_path_pi_0 as (a&is_path_pi_0).
-
-    rewrite init_l in first_state.
-
-    pose proof (is_path_pi 1) as is_path_pi_1_. compute in is_path_pi_1_. 
-    repeat let a := fresh "is_path_pi_1_" in
-    destruct is_path_pi_1_ as (a&is_path_pi_1_).
-    
-    apply is_path_pi_0 in first_state.
-    apply is_path_pi_1_0 in first_state.
-    rewrite first_state in pre. discriminate.
-    } 
+    (* proof that m=2 is ok *)
+    let solve_m :=
+      let progress_in_edges m first_state :=
+        let is_path_pi_0:= fresh "is_path_pi_0" in
+        pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0);
+        (apply a in first_state) + (apply is_path_pi_0 in first_state)
+      in
+      intro pre;
+      rewrite init_l in first_state;
+      progress_in_edges 0 first_state;
+      progress_in_edges 1 first_state;
+      rewrite first_state in pre; discriminate in 
+    repeat split;solve_m.
   }
 Defined.
   
