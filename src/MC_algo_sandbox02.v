@@ -70,7 +70,29 @@ Admitted.
 
 (* pose proof (is_path_l 1) as is_path_st_l.
   compute in is_path_st_l. *)
+Definition gen_cases (n:nat):Prop := 
+forall m:nat, (S m) <= n ->
+let fix gen n := 
+match n with 
+| S O => (m = 0)
+| S n' => (m = n') \/ (gen n')
+| O => False
+end
+in
+gen n
+.
 
+
+Definition usefull: forall m n:nat, S m <= n -> S m = n \/ S m <= n - 1.
+lia.
+Defined. 
+
+Definition usefull2: forall m n:nat, S m = S n -> m = n .
+lia.
+Defined.
+Definition usefull3: forall m n:nat, m <= n -> m - 1 <= n - 1.
+lia.
+Defined. 
 Theorem F1AU: forall st: state model_triangle, 
 (init model_triangle) st -> 
 satisfies (model_triangle) (fAU (fV 1)(fV 0)) st.
@@ -79,8 +101,6 @@ Proof.
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l. compute in init_l.
-
-
   let path_pi := fresh "path_pi" in
   intro path_pi.
   let is_path_pi := fresh "is_path_pi" in
@@ -88,6 +108,69 @@ Proof.
   let first_state:= fresh "first_state" in
   intro first_state.
   compute.
+
+  
+  let solve_AU n path_pi is_path_pi first_state := 
+    
+    eexists n;
+    
+    [
+      auto;
+      let m := fresh "m" in
+      let le_m := fresh "le_m" in
+      intro m;
+      intro le_m
+       ;
+      repeat split
+      ;
+      (
+        let pre := fresh "pre" in
+        
+        intro pre
+        
+        
+        ;
+        apply le_S_S in le_m;
+        destruct le_m
+      )
+      | auto
+      (* let solve_m :=
+      let progress_in_edges m first_state :=
+        let is_path_pi_0:= fresh "is_path_pi_0" in
+        pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0);
+        (apply a in first_state) + (apply is_path_pi_0 in first_state)
+      in
+      intro pre;
+      rewrite init_l in first_state;
+      progress_in_edges 0 first_state;
+      progress_in_edges 1 first_state;
+      rewrite first_state in pre; discriminate 
+    in 
+    repeat split;solve_m *)
+      (* let solve_m :=
+        let progress_in_edges m first_state :=
+          let is_path_pi_0:= fresh "is_path_pi_0" in
+          pose proof (is_path_pi m) as is_path_pi_0; 
+          compute in is_path_pi_0; 
+          repeat let a := fresh "is_path_pi_0" in
+          destruct is_path_pi_0 as (a&is_path_pi_0);
+          (apply a in first_state) + (apply is_path_pi_0 in first_state)
+        in
+        
+        let rec iter n := 
+          iter(n-1);progress_in_edges n first_state
+        in
+        intro pre;
+        rewrite init_l in first_state;
+        iter n;
+        rewrite first_state in pre; discriminate 
+      in 
+      repeat split;solve_m *)
+    ]
+  in
+  (* solve_AU 2 path_pi is_path_pi first_state. *)
   eexists 2 (*n*).
   {
     let m := fresh "m" in
@@ -97,9 +180,34 @@ Proof.
     repeat split.
     {
       intro pre.
-      assert (le_S_S: forall m, (S m) <= 2 (*n*)-> m = 1 \/ m = 0). lia.
-      apply le_S_S in le_m.
+      repeat apply usefull in le_m.
+
+      (* let le_S_S :=  fresh "le_S_S" in
+      assert (le_S_S: forall m, (S m) <= 2 -> m = 1 \/ m = 0). lia.
+      apply le_S_S in le_m. *)
       destruct le_m.
+      
+        apply usefull2 in H.
+        rewrite H in pre.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0); 
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate).
+      
+        apply usefull in H.
+        compute in H.
+        apply usefull2 in H.
+        rewrite H in pre.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0); 
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate).
+
+      }
+
+
       { (*case k < m*)
         rewrite H in pre.
         rewrite init_l in first_state.
@@ -129,7 +237,8 @@ Proof.
       rewrite init_l in first_state;
       progress_in_edges 0 first_state;
       progress_in_edges 1 first_state;
-      rewrite first_state in pre; discriminate in 
+      rewrite first_state in pre; discriminate 
+    in 
     repeat split;solve_m.
   }
 Defined.
