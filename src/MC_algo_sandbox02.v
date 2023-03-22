@@ -110,7 +110,7 @@ Proof.
   compute.
 
   
-  let solve_AU n path_pi is_path_pi first_state := 
+  (* let solve_AU n path_pi is_path_pi first_state := 
     
     eexists n;
     
@@ -119,22 +119,71 @@ Proof.
       let m := fresh "m" in
       let le_m := fresh "le_m" in
       intro m;
-      intro le_m
-       ;
+      intro le_m;
       repeat split
       ;
       (
         let pre := fresh "pre" in
         
-        intro pre
-        
-        
-        ;
-        apply le_S_S in le_m;
-        destruct le_m
+        let first_case := fresh "first_case" in
+        let second_case := fresh "second_case" in
+
+        intro pre;
+        let rec solve_pattern le_m := 
+          apply usefull in le_m; compute in le_m;
+          destruct le_m as [ first_case | second_case];
+          tryif [> lia|lia ] 
+          then 
+          [>
+            apply usefull2 in first_case;
+              rewrite first_case in pre;
+              rewrite init_l in first_state;
+              rewrite first_state in pre; discriminate
+            |
+            auto
+          ]
+          else 
+          [>
+            apply usefull2 in first_case;
+            rewrite first_case in pre;
+            rewrite init_l in first_state;
+            pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+            repeat let a := fresh "is_path_pi_0" in
+            destruct is_path_pi_0 as (a&is_path_pi_0);
+            try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
+            |
+            solve_pattern second_case
+            ]
+          (* [
+            apply usefull2 in first_case;
+            rewrite first_case in pre;
+            rewrite init_l in first_state;
+            pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+            repeat let a := fresh "is_path_pi_0" in
+            destruct is_path_pi_0 as (a&is_path_pi_0);
+            try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
+          |
+            apply usefull in second_case; compute in second_case;
+            destruct second_case as [ first_case | second_case]
+            ;[
+              apply usefull2 in first_case;
+              rewrite first_case in pre;
+              rewrite init_l in first_state;
+              rewrite first_state in pre; discriminate
+              (* apply usefull2 in first_case;
+            rewrite first_case in pre;
+            rewrite init_l in first_state;
+            pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+            repeat let a := fresh "is_path_pi_0" in
+            destruct is_path_pi_0 as (a&is_path_pi_0);
+            try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate) *)
+              |
+              lia]
+          ] *)
+        in
+        solve_pattern le_m
       )
-      | auto
-      (* let solve_m :=
+      | let solve_m :=
       let progress_in_edges m first_state :=
         let is_path_pi_0:= fresh "is_path_pi_0" in
         pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
@@ -148,30 +197,102 @@ Proof.
       progress_in_edges 1 first_state;
       rewrite first_state in pre; discriminate 
     in 
-    repeat split;solve_m *)
-      (* let solve_m :=
+    repeat split;solve_m
+    ]
+  in *)
+  (* solve_AU 2 path_pi is_path_pi first_state. *)
+  eexists 2 (*n*); 
+  [
+    auto;
+      let m := fresh "m" in
+      let le_m := fresh "le_m" in
+      intro m;
+      intro le_m;
+      repeat split;
+      (
+        let pre := fresh "pre" in
+        intro pre;
+        let rec solve_rec m le_m pre := 
+          apply usefull in le_m; compute in le_m;
+          let first_case := fresh "first_case" in
+          let second_case := fresh "second_case" in
+          destruct le_m as [ first_case | second_case]; 
+          [> 
+          (apply usefull2 in first_case;
+            rewrite first_case in pre;
+            rewrite init_l in first_state;
+            rewrite first_state in pre; discriminate) +
+            (apply usefull2 in first_case;
+            rewrite first_case in pre;
+            rewrite init_l in first_state;
+            pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+            repeat let a := fresh "is_path_pi_0" in
+            destruct is_path_pi_0 as (a&is_path_pi_0);
+            try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate) )
+            
+          | 
+            lia +  
+            (solve_rec (m-1) second_case pre) + auto
+          ] 
+
+          
+        in
+        (solve_rec m le_m pre)
+      )
+      
+    |
+    (* let progress_in_edges m first_state :=
+        let is_path_pi_0:= fresh "is_path_pi_0" in
+        pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0);
+        (apply a in first_state) + (apply is_path_pi_0 in first_state)
+      in *)
+      
+    rewrite init_l in first_state ;  
+    repeat split;
+    let pre := fresh "pre" in
+    let H := fresh "H" in
+    intro pre;
+    (
+      let progress_rec m first_state :=
         let progress_in_edges m first_state :=
           let is_path_pi_0:= fresh "is_path_pi_0" in
-          pose proof (is_path_pi m) as is_path_pi_0; 
-          compute in is_path_pi_0; 
+          pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
           repeat let a := fresh "is_path_pi_0" in
           destruct is_path_pi_0 as (a&is_path_pi_0);
           (apply a in first_state) + (apply is_path_pi_0 in first_state)
         in
-        
-        let rec iter n := 
-          iter(n-1);progress_in_edges n first_state
+        let rec body m first_state := 
+        (progress_in_edges m first_state; rewrite first_state in pre;discriminate)
+        +
+        (progress_in_edges m first_state;body (m+1) first_state)
         in
-        intro pre;
-        rewrite init_l in first_state;
-        iter n;
-        rewrite first_state in pre; discriminate 
+        body m first_state
       in 
-      repeat split;solve_m *)
-    ]
-  in
-  (* solve_AU 2 path_pi is_path_pi first_state. *)
-  eexists 2 (*n*).
+      progress_rec 0 first_state;
+      try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
+      
+    )
+  ].
+Defined.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   {
     let m := fresh "m" in
     intro m.
@@ -179,16 +300,69 @@ Proof.
     intro le_m.
     repeat split.
     {
-      intro pre.
-      repeat apply usefull in le_m.
+      intro pre; apply usefull in le_m; compute in le_m.
+      let first_case := fresh "first_case" in
+      let second_case := fresh "second_case" in
+      destruct le_m as [ first_case | second_case];
+      [
+        apply usefull2 in first_case;
+        rewrite first_case in pre;
+        rewrite init_l in first_state;
+        pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0);
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
+      |
+        apply usefull in second_case;
+        destruct second_case as [ first_case | second_case]
+        ;[
+          apply usefull2 in first_case;
+          rewrite first_case in pre;
+          rewrite init_l in first_state;
+          rewrite first_state in pre; discriminate
+          
+          |
+          lia]
+      ].
+    } 
+  }{
+    (* repeat split; intro pre. *)
+    (* proof that m=2 is ok *)
+    let solve_m :=
+      let progress_in_edges m first_state :=
+        let is_path_pi_0:= fresh "is_path_pi_0" in
+        pose proof (is_path_pi m) as is_path_pi_0; compute in is_path_pi_0; 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0);
+        (apply a in first_state) + (apply is_path_pi_0 in first_state)
+      in
+      intro pre;
+      rewrite init_l in first_state;
+      progress_in_edges 0 first_state;
+      progress_in_edges 1 first_state;
+      rewrite first_state in pre; discriminate 
+    in 
+    repeat split;solve_m.
+  } Defined.
 
-      (* let le_S_S :=  fresh "le_S_S" in
-      assert (le_S_S: forall m, (S m) <= 2 -> m = 1 \/ m = 0). lia.
-      apply le_S_S in le_m. *)
-      destruct le_m.
-      
-        apply usefull2 in H.
+
+    { (*case k < m*)
         rewrite H in pre.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
+        repeat let a := fresh "is_path_pi_0" in
+        destruct is_path_pi_0 as (a&is_path_pi_0); 
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate).
+      }
+      {  (*case 0 = m*)
+        rewrite H in pre.
+        rewrite init_l in first_state.
+        rewrite first_state in pre. discriminate.
+      }
+
+  }
+      
+        rewrite first_case in pre.
         rewrite init_l in first_state.
         pose proof (is_path_pi 0) as is_path_pi_0. compute in is_path_pi_0. 
         repeat let a := fresh "is_path_pi_0" in
