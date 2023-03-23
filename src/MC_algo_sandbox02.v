@@ -268,10 +268,10 @@ Proof.
         +
         (progress_in_edges m first_state;body (m+1) first_state)
         in
-        body m first_state
+        body m first_state;
+        try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
       in 
-      progress_rec 0 first_state;
-      try (apply is_path_pi_0 in first_state;rewrite first_state in pre; discriminate)
+      progress_rec 0 first_state
       
     )
   ].
