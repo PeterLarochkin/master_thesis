@@ -452,7 +452,7 @@ Ltac test_ltb_m_n m n:=
 assert (m < n);progress auto
 .
 
-Ltac SOLVE_AU2 n STATE_SIZE init_l := 
+Ltac SOLVE_AU2 n max_of_state init_l := 
 let solve_AU max_of_state :=
   let path_pi := fresh "path_pi" in
   intro path_pi;
@@ -551,7 +551,7 @@ let solve_AU max_of_state :=
   in
   sol_AU n
 in
-solve_AU n.
+solve_AU max_of_state .
 
 
 (* try (destruct first_state; [auto|auto]). *)
@@ -564,4 +564,221 @@ Proof.
   let init_l := fresh "init_l" in
   intro init_l. compute in init_l.
   SOLVE_AU2 2 4 init_l.
+Defined.
+
+
+Ltac SOLVE_AX init_l := 
+  let state_in := fresh "state_in" in
+  intro state_in;
+  let tr := fresh "tr" in
+  intro tr;
+  repeat split;
+  compute in init_l;
+  let pre_state := fresh "pre_state" in
+  intro pre_state;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr as (a&b);((apply a in init_l) + (apply b in init_l)); rewrite init_l in pre_state; discriminate
+  )  
+.
+
+
+Theorem F1AX: forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAX (fV 1)) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  SOLVE_AX init_l.
+Defined.
+
+Ltac SOLVE_AX_AX init_l := 
+  let state_in := fresh "state_in" in
+  intro state_in;
+  let tr := fresh "tr" in
+  intro tr;
+  repeat split;
+  compute in init_l;
+  let pre_state := fresh "pre_state" in
+  intro pre_state;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr as (a&b);((apply a in init_l) + (apply b in init_l)); rewrite init_l in pre_state; discriminate
+  )
+.
+
+Ltac search_way tr1 init_l pre_state:=
+repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr1 as (a&b);((apply a in init_l) + (apply b in init_l));
+    rewrite init_l in pre_state; discriminate
+  )
+.
+
+
+Theorem F1AXAX: forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAX (fAX (fV 0))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  let state_in := fresh "state_in" in
+  intro state_in.
+  let tr := fresh "tr" in
+  intro tr.
+  compute.
+  let new_state_in := fresh "new_state_in" in
+  intro new_state_in.
+  let tr := fresh "tr" in
+  intro tr.
+  repeat split;
+  let pre_state := fresh "pre_state" in
+  intro pre_state;
+  compute in tr; compute in init_l;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr as (a&b);((apply a in init_l) + (apply b in init_l));
+    (
+      lazymatch goal with 
+      | init_l: ?K \/ ?L |- _ => (destruct init_l as [init_l|init_l])
+      | init_l: _ |- _ => idtac
+      end
+    );
+    repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr0 as (a&b);((apply a in init_l) + (apply b in init_l));
+    (
+    lazymatch goal with 
+    | init_l: ?K \/ ?L |- _ => (destruct init_l as [init_l|init_l])
+    | init_l: _ |- _ => idtac
+    end
+    )
+    ) 
+  );rewrite init_l in pre_state; discriminate.
+Defined.
+
+Theorem F1AX': forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAX (fAX (fV 1))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  intro. intro. compute in H. compute in init_l.  destruct H. destruct H0. destruct H1.
+  apply H in init_l as new_state.
+  compute.
+  SOLVE_AX init_l.
+Defined.
+
+Theorem F1_AU_AX: forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAU (fV 1)(fAX (fV 0))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l. compute in init_l.
+  compute.
+  intro path_l.
+  intro is_path_l.
+  intro first_state.
+  eexists 1.
+  {
+    auto;
+    let m := fresh "m" in
+    let le_m := fresh "le_m" in
+    intro m;
+    intro le_m;
+    repeat split;
+    (
+      let pre := fresh "pre" in
+      intro pre;
+      let rec solve_rec m le_m pre := 
+        apply usefull in le_m; compute in le_m;
+        let first_case := fresh "first_case" in
+        let second_case := fresh "second_case" in
+        destruct le_m as [ first_case | second_case]; 
+        [> 
+        (apply usefull2 in first_case;
+          rewrite first_case in pre;
+          rewrite init_l in first_state;
+          rewrite first_state in pre; discriminate) +
+          (apply usefull2 in first_case;
+          rewrite first_case in pre;
+          rewrite init_l in first_state;
+          pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
+          repeat let a := fresh "is_path_pi_0" in
+          destruct is_path_pi_0 as (a&is_path_pi_0);
+          try ((apply a in first_state)+(apply is_path_pi_0 in first_state);rewrite first_state in pre; discriminate) )
+          
+        | 
+          lia +  
+          (solve_rec (m-1) second_case pre) + auto
+        ]
+      in
+      (solve_rec m le_m pre)
+    ).
+  }
+  {
+    
+    intro new_st_l_in.
+    intro new_init_l.
+    repeat split.
+    intro pre.
+    pose proof (is_path_l 0) as is_path_l_0. 
+    rewrite init_l in first_state. destruct is_path_l_0. 
+    apply H in first_state.
+    destruct new_init_l.
+    destruct H2.
+    apply H2 in first_state.
+    destruct first_state. rewrite H4 in pre. discriminate.
+    
+    
+    
+    
+    (let a:= fresh "a" in
+    let b:= fresh "b" in
+      pose proof (is_path_l 0) as is_path_pi_0; 
+      compute in is_path_pi_0; 
+      repeat (
+        let a := fresh "a" in
+        let b:= fresh "b" in
+        destruct is_path_pi_0 as (a&b);
+        ((apply a in first_state) + (apply is_path_pi_0 in first_state)); 
+        rewrite init_l in first_state;
+      )).
+    let a := fresh "a" in
+      let b := fresh "b" in
+      destruct is_path_l as (a&b).
+    repeat (
+      let a := fresh "a" in
+      let b := fresh "b" in
+      destruct is_path_l as (a&b);
+      ((apply a in first_state) + (apply b in first_state));
+      rewrite init_l in first_state; 
+      repeat (
+      let a := fresh "a" in
+      let b := fresh "b" in
+      destruct new_init_l as (a&b);
+      ((apply a in first_state) + (apply b in first_state));
+      ((rewrite first_state in pre; 
+            discriminate)
+      )
+    )).
+    
+
+    progress_in_edges max_of_state
+
+
+  }
 Defined.
