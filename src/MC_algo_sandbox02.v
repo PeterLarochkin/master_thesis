@@ -540,8 +540,8 @@ let solve_AU max_of_state :=
             )
           in
           through_edge 0 first_state
-      in
-      progress_in_edges max_of_state
+        in
+        progress_in_edges max_of_state
       ]
     )
     +
@@ -666,119 +666,294 @@ Proof.
   );rewrite init_l in pre_state; discriminate.
 Defined.
 
+(* need to put right init_l *)
+Ltac SOLVE_AX' init_l := 
+  let state_in := fresh "state_in" in
+  intro state_in;
+  let tr := fresh "tr" in
+  intro tr;
+  repeat split;
+  compute in init_l;
+  let pre_state := fresh "pre_state" in
+  intro pre_state;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct tr as (a&b);((apply a in init_l) + (apply b in init_l));
+    (
+      lazymatch goal with 
+      | init_l: ?K \/ ?L |- _ => (destruct init_l as [init_l|init_l])
+      | init_l: _ |- _ => idtac
+      end
+    );
+    rewrite init_l in pre_state; discriminate
+  )  
+.
 Theorem F1AX': forall st: state model_sq, 
 (init model_sq) st -> 
-satisfies (model_sq) (fAX (fAX (fV 1))) st.
+satisfies (model_sq) ((fAX (fV 1))) st.
 Proof.
   let st_l := fresh "st_l" in
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l.
-  intro. intro. compute in H. compute in init_l.  destruct H. destruct H0. destruct H1.
-  apply H in init_l as new_state.
-  compute.
-  SOLVE_AX init_l.
+  SOLVE_AX' init_l.
 Defined.
 
-Theorem F1_AU_AX: forall st: state model_sq, 
+
+Ltac SOLVE_FV init_l st_l := 
+  repeat split;
+  let pre := fresh "pre" in
+  intro pre; 
+  rewrite init_l in pre; 
+  discriminate
+.
+Theorem F1_FV: forall st: state model_sq, 
 (init model_sq) st -> 
-satisfies (model_sq) (fAU (fV 1)(fAX (fV 0))) st.
+satisfies (model_sq) (fV 1) st.
 Proof.
   let st_l := fresh "st_l" in
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l. compute in init_l.
-  compute.
-  intro path_l.
-  intro is_path_l.
+  SOLVE_FV init_l st_l.
+Defined.
+
+
+Ltac SOLVE_AU2' n max_of_state init_l solve_subformula := 
+let solve_AU max_of_state :=
+  let path_pi := fresh "path_pi" in
+  intro path_pi;
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi;
+  let first_state:= fresh "first_state" in
+  intro first_state;
+  compute;
+  let rec sol_AU n :=
+  tryif (let h:= fresh "h" in assert(h: n <= max_of_state); [progress auto | auto])
+  then
+    (
+      eexists n (*n*); 
+      [
+          auto;
+          let m := fresh "m" in
+          let le_m := fresh "le_m" in
+          intro m;
+          intro le_m;
+          (
+            let rec solve_rec le_m := 
+              apply usefull in le_m; (*compute in le_m;*)
+              destruct le_m as [ le_m | le_m];
+              [>
+                apply usefull2 in le_m;
+                rewrite init_l in first_state;
+                let rec loop_to_needed_m i m :=
+                tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
+                  then 
+                      let is_path_pi_i := fresh "is_path_pi_i" in
+                      pose proof (is_path_pi i) as is_path_pi_i;
+                      compute in is_path_pi_i;
+                      repeat (
+                        let a := fresh "a" in
+                        let b := fresh "b" in
+                        destruct is_path_pi_i as (a&b);
+                        ((apply a in first_state)+(apply b in first_state));
+                        (
+                          lazymatch type of first_state with 
+                          | _ \/ _ => (repeat destruct first_state as [first_state|first_state])
+                          | _ => idtac
+                          end
+                        );
+                        loop_to_needed_m (i + 1) m)
+                  else 
+                      idtac
+                in
+                lazymatch type of le_m with 
+                | _ = ?k => loop_to_needed_m 0 k
+                | _ => idtac
+                end
+                ;
+                rewrite <- le_m in first_state;
+                solve_subformula first_state
+                
+              | 
+                lia +  
+                (solve_rec le_m) + auto
+              ]
+            in
+            (solve_rec le_m)
+          )
+          
+        |
+        let progress_in_edges n :=
+          compute;
+          rewrite init_l in first_state ;  
+          repeat split;
+          let pre := fresh "pre" in
+          intro pre;
+          let rec through_edge m first_state := 
+            (
+              lazymatch goal with 
+              | first_state: ?K \/ ?L |- _ => (destruct first_state as [first_state|first_state])
+              | first_state: _ |- _ => idtac
+              end
+            );
+            (let is_path_pi_0:= fresh "is_path_pi_0" in
+            pose proof (is_path_pi m) as is_path_pi_0; 
+            compute in is_path_pi_0; 
+            repeat (
+              let a := fresh "is_path_pi_0" in
+              destruct is_path_pi_0 as (a&is_path_pi_0);
+              ((apply a in first_state) + (apply is_path_pi_0 in first_state))
+            ));
+            (
+              lazymatch goal with 
+              | first_state: ?K \/ ?L |- _ => (destruct first_state as [first_state|first_state])
+              | first_state: _ |- _ => idtac
+              end
+            );
+            ((rewrite first_state in pre; 
+            discriminate)
+            +
+            (
+              tryif (let h:= fresh "h" in assert(h: m + 1 <= n); [progress auto | auto])
+              then through_edge (m+1) first_state
+              else idtac
+              )
+            )
+          in
+          through_edge 0 first_state
+        in
+        progress_in_edges max_of_state
+      ]
+    )
+    +
+    sol_AU (n + 1)
+  else 
+  fail "solve_AU: with" n
+  in
+  sol_AU n
+in
+solve_AU max_of_state .
+
+
+
+Ltac SOLVE_FV' init_l := (*solve satisfies model (fV ?) (?st) probleb *)
+  repeat split;
+  let pre := fresh "pre" in
+  intro pre; 
+  rewrite init_l in pre; 
+  discriminate
+.
+Theorem F1_AU_AX: forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAU (fV 1)((fV 0))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l. compute in init_l.
+  SOLVE_AU2' 2 2  init_l SOLVE_FV'.
+  
+  let path_pi := fresh "path_pi" in
+  intro path_pi;
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi;
+  let first_state:= fresh "first_state" in
   intro first_state.
-  eexists 1.
+  eexists 2 (*n*).
   {
     auto;
     let m := fresh "m" in
     let le_m := fresh "le_m" in
     intro m;
-    intro le_m;
-    repeat split;
+    intro le_m.
     (
-      let pre := fresh "pre" in
-      intro pre;
-      let rec solve_rec m le_m pre := 
-        apply usefull in le_m; compute in le_m;
-        let first_case := fresh "first_case" in
-        let second_case := fresh "second_case" in
-        destruct le_m as [ first_case | second_case]; 
-        [> 
-        (apply usefull2 in first_case;
-          rewrite first_case in pre;
+      let rec solve_rec le_m := 
+        apply usefull in le_m; (*compute in le_m;*)
+        destruct le_m as [ le_m | le_m];
+        [>
+          apply usefull2 in le_m;
           rewrite init_l in first_state;
-          rewrite first_state in pre; discriminate) +
-          (apply usefull2 in first_case;
-          rewrite first_case in pre;
-          rewrite init_l in first_state;
-          pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0;
-          repeat let a := fresh "is_path_pi_0" in
-          destruct is_path_pi_0 as (a&is_path_pi_0);
-          try ((apply a in first_state)+(apply is_path_pi_0 in first_state);rewrite first_state in pre; discriminate) )
+          let rec loop_to_needed_m i m :=
+          tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
+            then 
+                let is_path_pi_i := fresh "is_path_pi_i" in
+                pose proof (is_path_pi i) as is_path_pi_i;
+                compute in is_path_pi_i;
+                repeat (
+                  let a := fresh "a" in
+                  let b := fresh "b" in
+                  destruct is_path_pi_i as (a&b);
+                  ((apply a in first_state)+(apply b in first_state));
+                  (
+                    lazymatch type of first_state with 
+                    | _ \/ _ => (repeat destruct first_state as [first_state|first_state])
+                    | _ => idtac
+                    end
+                  );
+                  loop_to_needed_m (i + 1) m)
+            else 
+                idtac
+          in
+          lazymatch type of le_m with 
+          | _ = ?k => loop_to_needed_m 0 k
+          | _ => idtac
+          end
+          ;
+          rewrite <- le_m in first_state;
+          SOLVE_FV' first_state
           
         | 
           lia +  
-          (solve_rec (m-1) second_case pre) + auto
+          (solve_rec le_m) + auto
         ]
       in
-      (solve_rec m le_m pre)
+      (solve_rec le_m)
     ).
-  }
-  {
-    
-    intro new_st_l_in.
-    intro new_init_l.
-    repeat split.
-    intro pre.
-    pose proof (is_path_l 0) as is_path_l_0. 
-    rewrite init_l in first_state. destruct is_path_l_0. 
-    apply H in first_state.
-    destruct new_init_l.
-    destruct H2.
-    apply H2 in first_state.
-    destruct first_state. rewrite H4 in pre. discriminate.
-    
-    
-    
-    
-    (let a:= fresh "a" in
-    let b:= fresh "b" in
-      pose proof (is_path_l 0) as is_path_pi_0; 
-      compute in is_path_pi_0; 
-      repeat (
-        let a := fresh "a" in
-        let b:= fresh "b" in
-        destruct is_path_pi_0 as (a&b);
-        ((apply a in first_state) + (apply is_path_pi_0 in first_state)); 
-        rewrite init_l in first_state;
-      )).
-    let a := fresh "a" in
-      let b := fresh "b" in
-      destruct is_path_l as (a&b).
-    repeat (
-      let a := fresh "a" in
-      let b := fresh "b" in
-      destruct is_path_l as (a&b);
-      ((apply a in first_state) + (apply b in first_state));
-      rewrite init_l in first_state; 
+  
+  
+  
+  let m := fresh "m" in
+    let le_m := fresh "le_m" in
+    intro m;
+    intro le_m.
+    apply usefull in le_m; compute in le_m.
+    destruct le_m as [ le_m | le_m].
+
+    (* [ *)
+    {
+      apply usefull2 in le_m;
+      rewrite init_l in first_state ;
+      pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0.
       repeat (
       let a := fresh "a" in
       let b := fresh "b" in
-      destruct new_init_l as (a&b);
-      ((apply a in first_state) + (apply b in first_state));
-      ((rewrite first_state in pre; 
-            discriminate)
-      )
-    )).
-    
+      destruct is_path_pi_0 as (a&b); (apply a in first_state)+(apply b in first_state);
+      rewrite <- le_m in first_state;
+      SOLVE_FV' first_state
+      ).
+    } 
+    {
+      apply usefull in le_m; compute in le_m.
+      destruct le_m as [ le_m | le_m].
+      {
+        apply usefull2 in le_m;
+        rewrite <- le_m in first_state; 
+        rewrite init_l in first_state.
+        SOLVE_FV' first_state.
 
-    progress_in_edges max_of_state
+      }
+      apply usefull2 in le_m;
+      rewrite init_l in first_state ;
+      pose proof (is_path_pi 0) as is_path_pi_0; compute in is_path_pi_0.
 
+    }
+      (;rewrite le_m in first_state; SOLVE_FV' first_state st_l)
+
+      |
+
+    ].
 
   }
 Defined.
