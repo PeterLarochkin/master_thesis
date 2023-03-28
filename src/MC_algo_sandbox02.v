@@ -829,7 +829,7 @@ Ltac SOLVE_FV' init_l := (*solve satisfies model (fV ?) (?st) probleb *)
   rewrite init_l in pre; 
   discriminate
 .
-Theorem F1_AU_AX: forall st: state model_sq, 
+Theorem F1_AU_FV: forall st: state model_sq, 
 (init model_sq) st -> 
 satisfies (model_sq) (fAU (fV 1)((fV 0))) st.
 Proof.
@@ -860,7 +860,6 @@ repeat (
   ));
   solve_subformula1 init_l.
 
-  Compute init model_sq.
 Theorem F1AX'': forall st: state model_sq, 
 (st = four_sq) -> 
 satisfies (model_sq) ((fAX (fV 0))) st.
@@ -869,6 +868,115 @@ Proof.
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l.
-  
   SOLVE_AX2' init_l SOLVE_FV'.
+Defined.
+
+
+Theorem F1AR: forall st: state model_sq, 
+(init model_sq) st -> 
+satisfies (model_sq) (fAR (fV 1) (fV 0)) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  (* compute. *)
+  let path_pi := fresh "path_pi" in
+  intro path_pi.
+  let is_path_pi := fresh "is_path_pi" in 
+  intro is_path_pi.
+  let first_state := fresh "first_state" in
+  intro first_state.
+  right.
+Admitted.
+
+Definition from_trans_to_Prop3{A}(list_connections: list (A * (list A))): A -> A -> Prop :=
+(fun s1 s2 =>
+  let fix make_disjucntion_for_state_to (states_in: list A) := 
+  match states_in with
+  | head :: nil => s2 = head
+  | head :: tail => s2 = head \/ (make_disjucntion_for_state_to tail)
+  | nil => False
+  end
+  
+  in
+  let fix make_prop (list_connections: list (A * (list A))):Prop :=
+    match list_connections with 
+    | (b1,b2)::nil => (s1 = b1 -> (make_disjucntion_for_state_to b2))
+    | (b1,b2)::tail => (s1 = b1 -> (make_disjucntion_for_state_to b2)) /\ (make_prop tail)
+    | nil => False
+    end in 
+  make_prop list_connections).
+
+(* FIVE STATES *)
+Inductive   fifth : Set :=  one_fi | two_fi | three_fi | four_fi| five_fi.
+Definition  trans_fifth := from_trans_to_Prop3 [
+  (one_fi, [two_fi]);
+  (two_fi, [three_fi; four_fi]);
+  (three_fi, [four_fi]);
+  (four_fi, [five_fi]); 
+  (five_fi, [one_fi])
+].
+
+Definition  label_fifth := from_label_to_Prop [(one_fi, 0); (two_fi, 0); (three_fi,0); (four_fi, 1); (four_fi, 0); (five_fi, 0)].
+
+Definition  serial_fifth: forall w:fifth, exists (v:fifth), trans_fifth w v.
+intro; case w.
+eexists two_fi; compute; repeat split; intro; discriminate.
+eexists four_fi; compute. repeat split. intro. discriminate. intro. right. auto.
+intro; discriminate.
+intro; discriminate.
+eexists four_fi; compute. repeat split. intro. discriminate.
+intro. discriminate.
+intro. discriminate.
+intro. discriminate.
+eexists five_fi; compute. repeat split; intro; discriminate.
+eexists one_fi; compute. repeat split; intro; discriminate.
+Defined.
+
+
+Definition init_fifth := from_init_to_Prop [one_fi].
+Definition model_fifth: sts :=  {| 
+  state   := fifth; 
+  trans   := trans_fifth; 
+  init    := init_fifth; 
+  label   := label_fifth; 
+  serial  := serial_fifth 
+|}.
+
+Ltac test_ltb_m_n' m n:=
+assert (m < n);progress auto
+.
+
+Ltac in_all_hyps :=
+    repeat 
+    (
+      match goal with
+      |  H : _  |- _    => compute in H
+        lazymatch type of H with 
+        end
+      end
+    ).
+(* Ltac wrapper_for_searching_init_statement:=
+  repeat match goal with
+           | [ ?H : _ = _ |- _ ] => progress (compute in H)
+           end. *)
+(* lazymatch goal with
+| [H: _ = _ |- _ ] => compute in H
+| _ => fail "wrapper_for_searching_init_statement in 1st step"
+end. *)
+
+Theorem F2_AU_FV: forall st: state model_fifth, 
+(init model_fifth) st -> 
+satisfies (model_fifth) (fAU (fAX (fV 0) )((fV 1))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l. 
+  in_all_hyps.
+  wrapper_for_searching_init_statement.
+  compute in init_l.
+  wrapper_for_searching_init_statement.
+  SOLVE_AU2' 2 4 init_l SOLVE_FV' SOLVE_FV'.
 Defined.
