@@ -21,7 +21,26 @@ repeat (
   solve_subformula1 init_l.
 
 
-Ltac SOLVE_AU2' n max_of_state init_l solve_subformula1 solve_subformula2 := 
+Ltac SOLVE_AX2'' init_l solve_subformula1 := let next_state := fresh "next_state" in 
+intro next_state;
+let trans_to_new_state := fresh "trans_to_new_state" in 
+intro trans_to_new_state;
+compute in trans_to_new_state;
+repeat (
+let a := fresh "a" in
+let b := fresh "b" in
+destruct trans_to_new_state as (a&b);
+((apply a in init_l)+(apply b in init_l));
+(
+    lazymatch type of init_l with 
+    | _ \/ _ => (repeat destruct init_l as [init_l|init_l])
+    | _ => idtac
+    end
+));
+solve_subformula1.
+
+
+Ltac SOLVE_AU2'' n max_of_state init_l solve_subformula1 solve_subformula2 := 
 let solve_AU max_of_state :=
     let path_pi := fresh "path_pi" in
     intro path_pi;
@@ -46,8 +65,10 @@ let solve_AU max_of_state :=
                 apply usefull in le_m; (*compute in le_m;*)
                 destruct le_m as [ le_m | le_m];
                 [>
-                apply usefull2 in le_m;
+                (apply usefull2 in le_m) + lia (* for cases S m = 0*);
                 rewrite init_l in first_state;
+                try (rewrite <- le_m in first_state;
+                solve_subformula1 first_state);
                 let rec loop_to_needed_m i m :=
                     tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
                     then 
@@ -77,8 +98,9 @@ let solve_AU max_of_state :=
                 rewrite <- le_m in first_state;
                 solve_subformula1 first_state
                 
-                | 
-                lia +  
+                |
+                (compute in le_m;
+                lia) +  
                 (solve_rec le_m) + auto
                 ]
             in
@@ -86,6 +108,7 @@ let solve_AU max_of_state :=
             )
             
         |
+        auto;
         rewrite init_l in first_state;
         let rec loop_to_needed_m i m :=
             tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
@@ -106,9 +129,9 @@ let solve_AU max_of_state :=
                     );
                     loop_to_needed_m (i + 1) m)
             else 
-                fail "loop_to_needed_m"
+                idtac
         in
-        loop_to_needed_m 0 2;
+        loop_to_needed_m 0 n;
         solve_subformula2 first_state
         ]
     )
@@ -123,10 +146,11 @@ solve_AU max_of_state .
 
 
 
-Ltac SOLVE_FV' init_l := (*solve satisfies model (fV ?) (?st) problem *)
-  repeat split;
-  let pre := fresh "pre" in
-  intro pre; 
-  rewrite init_l in pre; 
-  discriminate
+Ltac SOLVE_FV'' init_l := (*solve satisfies model (fV ?) (?st) problem *)
+repeat split;
+let pre := fresh "pre" in
+intro pre; 
+rewrite init_l in pre; 
+discriminate
 .
+  
