@@ -839,3 +839,36 @@ Proof.
   intro init_l. compute in init_l.
   SOLVE_AU2' 2 4  init_l SOLVE_FV' SOLVE_FV'.
 Defined.
+
+
+
+Ltac SOLVE_AX2' init_l solve_subformula1 := let next_state := fresh "next_state" in 
+intro next_state;
+let trans_to_new_state := fresh "trans_to_new_state" in 
+intro trans_to_new_state;
+compute in trans_to_new_state;
+repeat (
+  let a := fresh "a" in
+  let b := fresh "b" in
+  destruct trans_to_new_state as (a&b);
+  ((apply a in init_l)+(apply b in init_l));
+  (
+    lazymatch type of init_l with 
+    | _ \/ _ => (repeat destruct init_l as [init_l|init_l])
+    | _ => idtac
+    end
+  ));
+  solve_subformula1 init_l.
+
+  Compute init model_sq.
+Theorem F1AX'': forall st: state model_sq, 
+(st = four_sq) -> 
+satisfies (model_sq) ((fAX (fV 0))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  
+  SOLVE_AX2' init_l SOLVE_FV'.
+Defined.
