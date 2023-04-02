@@ -981,9 +981,9 @@ repeat (
   let b := fresh "b" in
   destruct trans_to_new_state as (a&b);
   ((apply a in init_l)+(apply b in init_l));
-  (
+  repeat (
     lazymatch type of init_l with 
-    | _ \/ _ => (repeat destruct init_l as [init_l|init_l])
+    | _ \/ _ => ( destruct init_l as [init_l|init_l])
     | _ => idtac
     end
   ));
@@ -1086,12 +1086,12 @@ let solve_AU max_of_state :=
                     let b := fresh "b" in
                     destruct is_path_pi_i as (a&b);
                     ((apply a in first_state)+(apply b in first_state));
-                    (
+                    (repeat (
                     lazymatch type of first_state with 
-                    | _ \/ _ => (repeat destruct first_state as [first_state|first_state])
+                    | _ \/ _ => (destruct first_state as [first_state|first_state])
                     | _ => idtac
                     end
-                    );
+                    ));
                     loop_to_needed_m (i + 1) m)
             else 
                 idtac
@@ -1120,3 +1120,41 @@ Proof.
   let tac := (fun init => SOLVE_AX2' init SOLVE_FV') in 
   SOLVE_AU2'' 0 1 init_l SOLVE_FV' tac.
 Defined.
+
+
+Theorem F2_AR: forall st: state model_fifth, 
+(init model_fifth) st -> 
+satisfies (model_fifth) (fAR (fV 0) (fV 0)) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l. compute in init_l.
+  let path_pi := fresh "path_pi" in
+  intro path_pi.
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi.
+  let first_state := fresh "first_state" in
+  intro first_state.
+  let nth_of_path := fresh "nth_of_path" in
+  intro nth_of_path.
+  right.
+  {
+    compute.
+    split. split.
+    split. split.
+    split. split.
+    split.
+    2:split.
+    intro.
+    
+    
+    
+
+
+    
+    
+    
+
+  }
+  compute.
