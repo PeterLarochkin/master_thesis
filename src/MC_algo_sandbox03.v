@@ -167,26 +167,8 @@ Proof.
   let nth_of_path := fresh "nth_of_path" in
   intro nth_of_path.
   left.
-  {
-    induction nth_of_path.
-    {
-      eexists 0.
-      lia.
-      rewrite init_l in first_state.
-      SOLVE_FV' first_state.
-    }
-    {
-      induction IHnth_of_path as [h1 h2 h3];
-      eexists h1;[  auto|
-      destruct (path_pi h1);
-      SOLVE_FV' (path_pi h1)]. 
-    }  
-  }
-  (* right.
-  {
-    destruct (path_pi nth_of_path);
-    SOLVE_FV' (path_pi nth_of_path).
-  } *)
+
+
 Admitted.
 
 Theorem F2_IMP: forall st: state model_fifth, 
@@ -440,7 +422,7 @@ Ltac SOLVE_FV'' init_l := (*solve satisfies model (fV ?) (?st) probleb *)
 
 
 Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
-  repeat split;
+  (repeat split); auto;
   let pre := fresh "pre" in
   intro pre; 
   rewrite init_ in pre; 
@@ -474,7 +456,9 @@ Ltac solve_fAX tac1 init_l :=
 
 Ltac solve_fAnd tac1 tac2 init_ :=
 split; [> tac1 init_ | tac2 init_].
-
+Ltac solve_primitive_fV := 
+  repeat split;(progress auto) + (discriminate)
+  .
 Theorem F1_And: 
 forall st: state model_square, 
 st = three_square-> 
@@ -487,34 +471,7 @@ Proof.
   let tac1 := fun init_ => solve_fAnd solve_fV solve_fV init_ in
   let tac2 := fun init_ => solve_fAX solve_fV init_ in
   solve_fAnd tac1 tac2 init_l.
-  split;[
-    solve_fV init_l 
-    |
-    solve_fV init_l 
-  ].
-  solve_fAnd solve_fV solve_fV init.
-  let tac1 := fun init => solve_fAnd solve_fV solve_fV init in 
-  let tac2 := fun init => solve_fAX solve_fV init in 
-  solve_fAnd (tac1) (tac2) init_l.
-
-  let tac2 := fun init_ => solve_fAX init_ solve_fV
-  in
-  solve_fOr init_l solve_fV tac2.
-  compute in init_l.
-  right.
-  solve_fV init_l.
 Defined.
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -538,109 +495,39 @@ Proof.
   
   (* compute. *)
   intro n.
-  induction n.
-
-
-
-
-
-
-
-
-  {
-    right.
-    rewrite init_l in first_state.
-    let solve_subformula1 := fun init_ => SOLVE_FV' init_ 
-    in
-    solve_subformula1 first_state.
-  }
-  {
-    compute.
-    left.
-    eexists n.
-    lia.
-    split.
-    
-    (* compute. *)
-    destruct IHn as [IHn | IHn].
-    {
-      compute.
-      left.
-      destruct IHn as [m' leq_m_n sat_hyp].
-      eexists m'. 
-      lia.
-      auto.
-    }
-    {
-
-      compute in IHn.
-
-      destruct IHn.
-      destruct H0.
-      destruct H1.
-      apply cl in H2.
-      2:auto.
-      pose proof (is_path_pi n).
-      compute in H3.
-      destruct H3.
-      destruct H4.
-      destruct H5.
-      destruct (path_pi n).
-      pose proof (H3 eq_refl).
-      right.
-      SOLVE_FV' H7.
-      pose proof (H4 eq_refl).
-      right.
-      SOLVE_FV' H7.
-      pose proof (H1 eq_refl).
-      destruct H7.
-      pose proof (H5 eq_refl).
-      assert (n=0 \/ n >0). lia.
-      assert (n>0 -> S (n - 1) = n). lia.
-      destruct H9.
-      right. rewrite H9.
-      rewrite init_l in first_state.
-      pose proof (is_path_pi 0).
-      destruct H11. apply H11 in first_state.
-      SOLVE_FV' first_state.
-      apply H10 in H9.
-      
-      pose proof (is_path_pi ((n-1))).
-      destruct H11.
-      destruct H12.
-      destruct H13.
-      destruct (path_pi (n - 1)).
-      pose proof (H11 eq_refl).
-      rewrite H9 in H15.
-      pose proof (is_path_pi n).
-      destruct H16.
-      destruct H17.
-      apply H17 in H15. rewrite H8 in H15.
-      discriminate.
-      pose proof (H12 eq_refl).
-      rewrite H9 in H15.
-      left.
-      eexists n.
-      lia.
-      SOLVE_FV' H15.
-      pose proof (H13 eq_refl).
-      rewrite H9 in H15.
-      destruct H13.
-      left.
-      exists n. lia.
-      
-      
-      
-      
-      compute.
-      eexists n.
-      lia.
-      compute.
-      SOLVE_FV' H7.
-
-      right.
-      compute.
-      auto.
-    }
-  }
-Qed.
+  assert (n = 0 \/ n > 0); try lia.
+  destruct H.
+  right.
+  rewrite init_l in first_state.
+  rewrite H.
+  solve_fV first_state.
+  pose proof (is_path_pi (n-1)).
+  assert (n>0 -> S (n - 1) = n); try lia.
+  apply H1 in H.
+  rewrite H in H0.
+  destruct (path_pi n).
+  right.
+  solve_primitive_fV.
+  right. solve_primitive_fV.
+  right. solve_primitive_fV.
+  left.
+  eexists (n - 1).
+  lia.
+  destruct (path_pi (n - 1)).
+  destruct H0.
+  pose proof (H0 eq_refl).
+  discriminate.
+  compute in H0.
+  destruct H0.
+  destruct H2.
+  pose proof (H2 eq_refl).
+  discriminate.
+  solve_primitive_fV.
+  
+  compute in H0.
+  destruct H0.
+  destruct H2.
+  destruct H3.
+  pose proof (H4 eq_refl).
+  discriminate.
+Defined.
