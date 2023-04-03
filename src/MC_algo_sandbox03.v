@@ -543,9 +543,9 @@ Definition  trans_square' := from_trans_to_Prop3 [
 
 Definition  label_square' := from_label_to_Prop3 [
   (one_square', [0]);
-  (two_square', [0]); 
-  (three_square', [0;1]); 
-  (four_square', [2])].
+  (two_square', [0;1]); 
+  (three_square', [2]); 
+  (four_square', [3])].
 
 Definition  serial_square': forall w:square', exists (v:square'), trans_square' w v.
 intros.
@@ -574,6 +574,11 @@ Proof.
   auto.
 Qed.
 
+Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
+Proof.
+  lia. 
+Qed.
+
 
 Theorem F1'_AR: 
 forall st: state model_square', 
@@ -594,7 +599,7 @@ Proof.
   
   (* compute. *)
   intro n.
-  assert (n = 0 \/ n = 1 \/ n = 2  \/ n > 2); try lia.
+  assert (n = 0 \/ n > 0) as H; try lia.
   destruct H as [H | H].
   {
     right.
@@ -603,45 +608,25 @@ Proof.
     solve_fV first_state.
   }
   {
-    destruct H as [H | H].
+    pose proof (su 0 n H) as H0.
+    destruct H0 as [H0 | H0].
     {
       right.
       rewrite init_l in first_state.
       pose proof (is_path_pi 0) as trans.
       destruct trans as (trans1&trans2).
       apply trans1 in first_state.
-      rewrite H.
+      rewrite H0.
       solve_fV first_state.
     }
     {
-      destruct H as [H | H].
-      {
-        right.
-        rewrite init_l in first_state.
-        pose proof (is_path_pi 0) as trans.
-        destruct trans as (trans1&trans2).
-        apply trans1 in first_state.
-        pose proof (is_path_pi 1) as trans.
-        destruct trans as (trans1'&trans2').
-        destruct trans2' as (trans1''&trans2'').
-        apply trans1'' in first_state.
-        rewrite H.
-        solve_fV first_state.
-      }
-      {
-        left.
-        eexists 2; try lia.
-        rewrite init_l in first_state.
-        pose proof (is_path_pi 0) as trans.
-        destruct trans as (trans1&trans2).
-        apply trans1 in first_state.
-        pose proof (is_path_pi 1) as trans.
-        destruct trans as (trans1'&trans2').
-        destruct trans2' as (trans1''&trans2'').
-        apply trans1'' in first_state.
-        solve_fV first_state.
-      }
+      left.
+      eexists 1; try lia.
+      rewrite init_l in first_state.
+      pose proof (is_path_pi 0) as trans.
+      destruct trans as (trans1&trans2).
+      apply trans1 in first_state.
+      solve_fV first_state.
     }
   }
 Defined.
-
