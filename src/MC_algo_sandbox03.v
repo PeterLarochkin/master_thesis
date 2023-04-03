@@ -531,3 +531,117 @@ Proof.
   pose proof (H4 eq_refl).
   discriminate.
 Defined.
+
+
+Inductive   square' : Set :=  one_square' | two_square' | three_square' | four_square'.
+Definition  trans_square' := from_trans_to_Prop3 [
+  (one_square', [two_square']);
+  (two_square', [three_square']);
+  (three_square', [four_square']);
+  (four_square', [four_square'])
+].
+
+Definition  label_square' := from_label_to_Prop3 [
+  (one_square', [0]);
+  (two_square', [0]); 
+  (three_square', [0;1]); 
+  (four_square', [2])].
+
+Definition  serial_square': forall w:square', exists (v:square'), trans_square' w v.
+intros.
+case w.
+eexists two_square';repeat split; intro;try discriminate.
+eexists three_square';repeat split; intro;try discriminate; auto.
+eexists four_square';repeat split; intro;try discriminate; auto.
+eexists four_square';repeat split; intro;try discriminate; auto.
+Defined.
+
+
+Definition init_square' := from_init_to_Prop [one_square'].
+Definition model_square': sts :=  {| 
+  state   := square'; 
+  trans   := trans_square'; 
+  init    := init_square'; 
+  label   := label_square'; 
+  serial  := serial_square' 
+|}.
+
+
+Theorem us:forall {model:sts}, forall st:state model, exists st': state model, st = st'.
+Proof.
+  intros.
+  eexists st.
+  auto.
+Qed.
+
+
+Theorem F1'_AR: 
+forall st: state model_square', 
+(init model_square') st -> 
+satisfies (model_square') (fAR ((fV 1)) ((fV 0))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  (* compute. *)
+  let path_pi := fresh "path_pi" in
+  intro path_pi.
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi.
+  let first_state := fresh "first_state" in
+  intro first_state.
+  
+  (* compute. *)
+  intro n.
+  assert (n = 0 \/ n = 1 \/ n = 2  \/ n > 2); try lia.
+  destruct H as [H | H].
+  {
+    right.
+    rewrite init_l in first_state.
+    rewrite H.
+    solve_fV first_state.
+  }
+  {
+    destruct H as [H | H].
+    {
+      right.
+      rewrite init_l in first_state.
+      pose proof (is_path_pi 0) as trans.
+      destruct trans as (trans1&trans2).
+      apply trans1 in first_state.
+      rewrite H.
+      solve_fV first_state.
+    }
+    {
+      destruct H as [H | H].
+      {
+        right.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as trans.
+        destruct trans as (trans1&trans2).
+        apply trans1 in first_state.
+        pose proof (is_path_pi 1) as trans.
+        destruct trans as (trans1'&trans2').
+        destruct trans2' as (trans1''&trans2'').
+        apply trans1'' in first_state.
+        rewrite H.
+        solve_fV first_state.
+      }
+      {
+        left.
+        eexists 2; try lia.
+        rewrite init_l in first_state.
+        pose proof (is_path_pi 0) as trans.
+        destruct trans as (trans1&trans2).
+        apply trans1 in first_state.
+        pose proof (is_path_pi 1) as trans.
+        destruct trans as (trans1'&trans2').
+        destruct trans2' as (trans1''&trans2'').
+        apply trans1'' in first_state.
+        solve_fV first_state.
+      }
+    }
+  }
+Defined.
+
