@@ -19,6 +19,7 @@ forall pi : nat -> st, path st trans pi -> (pi 0 = w) -> p_release st pred1 pred
 
 Inductive form : Set :=
 | fF    : form
+| fNeg  : form -> form
 | fV    : nat -> form
 | fOr   : form -> form -> form 
 | fAnd  : form -> form -> form 
@@ -39,6 +40,7 @@ Record sts := STS {
 Fixpoint satisfies (M : sts) (s : form){struct s}:state M -> Prop := 
   (match s with
   | fF        => fun w : state M => False
+  | fNeg s0   => fun w : state M => ~ (satisfies M s0 w)
   | fV v      => fun w : state M => label M v w
   | fOr  s0 t => fun w : state M => (satisfies M s0 w) \/ (satisfies M t w)
   | fAnd s0 t => fun w : state M => (satisfies M s0) w /\ (satisfies M t w)

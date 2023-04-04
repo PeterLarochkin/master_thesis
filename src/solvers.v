@@ -155,3 +155,102 @@ let solve_AU max_of_state :=
     sol_AU n
 in
 solve_AU max_of_state .
+
+
+
+Ltac through_edges m is_path_pi first_state :=
+let rec loop_to_needed_m i m :=
+tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
+then 
+    
+    let is_path_pi_i := fresh "is_path_pi_i" in
+    pose proof (is_path_pi i) as is_path_pi_i;
+    compute in is_path_pi_i;
+    repeat (
+        let a := fresh "a" in
+        let b := fresh "b" in
+        destruct is_path_pi_i as (a&b);
+        ((compute in a; apply a in first_state)+(apply b in first_state));
+        (repeat (
+        lazymatch type of first_state with 
+        | _ \/ _ => (destruct first_state as [first_state|first_state])
+        | _ => idtac
+        end
+        ));
+        loop_to_needed_m (i + 1) m)
+else 
+    idtac
+in
+loop_to_needed_m 0 m.
+
+
+
+Ltac right_case i H is_path_pi first_state tac:= 
+  right;
+  (* rewrite init_l in first_state; *)
+  through_edges i is_path_pi first_state;
+  compute in H;
+  rewrite H;
+  tac first_state
+.
+Ltac left_case i is_path_pi first_state init_l tac:= 
+  left;
+  (* rewrite init_l in first_state; *)
+  through_edges i is_path_pi first_state;
+  eexists i;[
+    lia 
+    |
+    compute;
+    tac first_state
+  ] 
+.
+
+Theorem us:forall {model:sts}, forall st:state model, exists st': state model, st = st'.
+Proof.
+  intros.
+  eexists st.
+  auto.
+Qed.
+
+Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
+Proof.
+  lia. 
+Qed.
+
+Theorem si (n:nat):n=0 \/ n >0 .
+Proof.
+  lia.
+Qed.
+Ltac solve_fAR init_l max_of_state tac1 tac2 := 
+  let path_pi := fresh "path_pi" in
+  intro path_pi;
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi;
+  let first_state := fresh "first_state" in
+  intro first_state;
+  rewrite init_l in first_state;
+  let n :=  fresh "n" in
+  intro n;
+  let H := fresh "H" in
+  pose proof (si n) as H;
+  destruct H as [H | H]; [
+    right_case 0 H is_path_pi first_state tac2
+    |
+    let rec sol H i m :=
+    tryif (let h:= fresh "h" in assert(h: i < m); [progress auto | auto])
+    then
+      (solve [left_case i is_path_pi first_state init_l tac1] +
+      let H0 := fresh "H0" in
+      pose proof (su i n H) as H0;
+      destruct H0 as [H0 | H0]; [
+        compute in H0;
+        right_case (i+1) H0 is_path_pi first_state tac2
+        | 
+          sol H0 (i+1) m
+      ])
+    else 
+      idtac
+    in
+    sol H 0 max_of_state
+  ]
+.
