@@ -345,10 +345,12 @@ Proof.
 Defined.
   
 
+
+
 Theorem F1''_neg: 
 forall st: state model_square', 
 st = four_square' -> 
-satisfies (model_square') (fImp (fAX(fV 1)) (fF)) st.
+satisfies (model_square') (fNeg (fAX(fV 1)) ) st.
 Proof.
   let st_l := fresh "st_l" in
   intro st_l.
@@ -358,6 +360,13 @@ Proof.
   compute.
   contradict_fAX model_square' st_l sat_hyp init_l contradict_fV.
 Defined.
+Print ex.
+
+
+
+
+
+
 
 
 
@@ -365,14 +374,102 @@ Defined.
 Theorem F1'''_neg: 
 forall st: state model_square', 
 st = one_square' -> 
-satisfies (model_square') (fImp (fImp (fV 3)(fF)) (fF)) st.
+satisfies (model_square') (fNeg (fNeg (fV 3)) ) st.
 Proof.
   let st_l := fresh "st_l" in
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l.
   intro sat_hyp.
-  compute in sat_hyp.
   apply sat_hyp.
   SOLVE_FV' init_l.
 Qed.
+
+Ltac solve_fAX tac1 init_l := 
+  let next_state := fresh "next_state" in 
+  intro next_state;
+  let trans_to_new_state := fresh "trans_to_new_state" 
+  in 
+  intro trans_to_new_state;
+  compute in trans_to_new_state;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct trans_to_new_state as (a&b);
+    ((apply a in init_l)+(apply b in init_l));
+    (
+      lazymatch type of init_l with 
+      | _ \/ _ => repeat( destruct init_l as [init_l|init_l])
+      | _ => idtac
+      end
+  ));
+  tac1 init_l.
+
+
+
+Ltac contradict_fV' init_l := 
+  let H := fresh "H" in
+  intro H;
+  contradict_fV H init_l
+.
+
+
+Theorem F1''''_neg: 
+forall st: state model_square', 
+st = one_square' -> 
+satisfies (model_square') ((fAX(fNeg (fV 3)))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  solve_fAX contradict_fV' init_l .
+Defined.
+
+
+Theorem F2'_neg: 
+forall st: state model_square', 
+st = one_square' -> 
+satisfies (model_square') ((fNeg (fAX (fV 3)))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  intro sat_hyp.
+  contradict_fAX model_square' st_l sat_hyp init_l contradict_fV.
+Defined.
+
+
+
+
+Theorem F2''_neg: 
+forall st: state model_square', 
+st = one_square' -> 
+satisfies (model_square') ((fNeg (fAU (fV 0)(fV 2)))) st.
+Proof.
+  let st_l := fresh "st_l" in
+  intro st_l.
+  let init_l := fresh "init_l" in
+  intro init_l.
+  intro sat_hyp.
+
+  
+  
+
+  pose proof (H 0).
+  apply H to 0.
+  assert (H: nat->square') .
+  give_up.
+
+
+  
+  
+
+
+  
+
+
+
+
+
