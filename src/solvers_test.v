@@ -1,7 +1,7 @@
 Require Import MC_CTL2.
 Require Import List. Import ListNotations.
 Require Import Lia.
-
+Print and.
 Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
   repeat split;
   let pre := fresh "pre" in
@@ -11,9 +11,11 @@ Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
 .
 
 Ltac solve_fOr tac1 tac2 init_ := 
-(left; progress tac1 init_) + (right; progress tac2 init_) 
+(left; progress tac1 init_;progress auto) + (right; progress tac2 init_; progress auto) 
 .
 
+Goal True.
+repeat fail.
 
 Ltac solve_fAX tac1 init_l := 
   let next_state := fresh "next_state" in 
@@ -154,7 +156,7 @@ let solve_AU max_of_state :=
     in 
     sol_AU n
 in
-solve_AU max_of_state .
+solve_AU max_of_state.
 
 
 
@@ -182,6 +184,21 @@ else
     idtac
 in
 loop_to_needed_m 0 m.
+
+Ltac next_state_gen i is_path_pi first_state :=
+  let is_path_pi_i := fresh "is_path_pi_i" in
+  pose proof (is_path_pi i) as is_path_pi_i;
+  compute in is_path_pi_i;
+  let a := fresh "a" in
+        let b := fresh "b" in
+        destruct is_path_pi_i as (a&b);
+        ((compute in a; apply a in first_state)+(apply b in first_state));
+        (repeat (
+        lazymatch type of first_state with 
+        | _ \/ _ => (destruct first_state as [first_state|first_state])
+        | _ => idtac
+        end
+        )).
 
 
 
@@ -258,40 +275,43 @@ Definition from_label_to_Prop3{A}(list_connections: list (A * (list nat))): nat 
     | nil => False
     end in 
   make_prop list_connections).
-
-Inductive   square' : Set :=  one_square' | two_square' | three_square' | four_square'.
+Definition from_init_to_Prop{A}(list_init: list A):A->Prop :=
+  (fun s =>
+    let fix make_prop (list_init: list A):Prop :=
+      match list_init with 
+      | b::nil => s = b
+      | b::tail => (s = b) \/ (make_prop tail)
+      | nil => False
+      end in 
+    make_prop list_init) 
+.
+Inductive   square' : Set :=  one_square' | two_square' | three_square' | four_square' | five_square'.
 Definition  trans_square' := from_trans_to_Prop3 [
-  (one_square', [two_square']);
-  (two_square', [three_square']);
-  (three_square', [one_square'; four_square']);
-  (four_square', [four_square'])
+  (one_square', [two_square'; three_square']);
+  (two_square', [two_square'; three_square']);
+  (three_square', [four_square']);
+  (four_square', [five_square']);
+  (five_square', [five_square'])
 ].
 
 Definition  label_square' := from_label_to_Prop3 [
   (one_square', [0]);
-  (two_square', [0]); 
+  (two_square', [0;1]); 
   (three_square', [0]); 
-  (four_square', [0;1])].
+  (four_square', [0;1]);
+  (five_square', [2])].
 
 Definition  serial_square': forall w:square', exists (v:square'), trans_square' w v.
 intros.
 case w.
-eexists two_square';repeat split; intro;try discriminate.
-eexists three_square';repeat split; intro;try discriminate; auto.
-eexists one_square';repeat split; intro;try discriminate; auto.
+eexists two_square';repeat split; intro;try discriminate;left;auto.
+eexists two_square';repeat split; intro;try discriminate; auto.
 eexists four_square';repeat split; intro;try discriminate; auto.
+eexists five_square';repeat split; intro;try discriminate; auto.
+eexists five_square';repeat split; intro;try discriminate; auto.
 Defined.
-Definition from_init_to_Prop{A}(list_init: list A):A->Prop :=
-(fun s =>
-  let fix make_prop (list_init: list A):Prop :=
-    match list_init with 
-    | b::nil => s = b
-    | b::tail => (s = b) \/ (make_prop tail)
-    | nil => False
-    end in 
-  make_prop list_init) 
-.
-Definition init_square' := from_init_to_Prop [three_square'].
+
+Definition init_square' := from_init_to_Prop [one_square'].
 Definition model_square': sts :=  {| 
   state   := square'; 
   trans   := trans_square'; 
@@ -336,17 +356,242 @@ Ltac solve_fAR init_l max_of_state tac1 tac2 :=
   ]
 .
 
+
+
+
+ 
+Theorem name'{A B:nat ->Prop}:(forall n:nat, (A n) /\ (B n) ) -> (forall k:nat, (B k) ).
+Proof.
+  intros.
+  pose proof (H k).
+  destruct H0.
+  auto.
+Qed.
+
+Theorem name''{A B:nat ->Prop}:(forall n:nat, (A n) /\ (B n) ) -> (forall k:nat, (A k) ).
+Proof.
+  intros.
+  pose proof (H k).
+  destruct H0.
+  auto.
+Qed.
+
+Theorem name{X}{k}{a:X}: forall (p: nat -> X), 
+  (forall (n:nat) , p n = a -> p (S n) = a) -> 
+  (p k = a) ->(forall d, d > k -> p d = a).
+Proof.
+  intros.
+  induction d.
+  induction k.
+  lia.
+  lia.
+  pose proof (H d).
+  assert (S d > k -> d > k \/ d = k).
+  lia.
+  apply H2.
+  apply H3 in H1.
+  destruct H1.
+  apply IHd.
+  apply H1.
+  rewrite H1.
+  auto.
+Qed.
+
+Theorem name'''{m:sts}: forall s: (state m), exists2 k, s = k & k = s.
+intros.
+eexists s.
+auto.
+Qed.
 Theorem F1: 
 forall st: state model_square', 
 (init model_square') st -> 
-satisfies (model_square') (fAR (fV 1) (fAX (fV 0))) st.
+satisfies (model_square') (fAR (fAX (fV 2))  ((fV 0))) st.
 Proof.
   let st_l := fresh "st_l" in
   intro st_l.
   let init_l := fresh "init_l" in
   intro init_l.
+  
   (* compute in init_l. *)
-  let tac1 := fun init_ => solve_fV init_ in
+  (* let tac1 := fun init_ => solve_fAX solve_fV init_ in
   let tac2 := fun init_ => solve_fV init_ in
-  solve_fAR init_l 4 tac1 tac2.
+  solve_fAR init_l 4 tac1 tac2. *)
+  let path_pi := fresh "path_pi" in
+  intro path_pi;
+  let is_path_pi := fresh "is_path_pi" in
+  intro is_path_pi;
+  let first_state := fresh "first_state" in
+  intro first_state;
+  rewrite init_l in first_state;
+  let n :=  fresh "n" in
+  intro n.
+  
+  
+  (* destruct (path_pi n). *)
+  (* 
+  simple case 
+  pose proof (name''' (path_pi n)).
+  destruct H.
+  destruct x. *)
+  (* proof stuck
+      compute in is_path_pi.
+    pose proof( name' is_path_pi).
+    compute in H0.
+    pose proof( name'' H0).
+    compute in H1.
+    through_edges 1 is_path_pi first_state.
+    pose proof( name path_pi H1 first_state).
+    pose proof (H2 n).
+    assert (n>0 -> n = 1 \/ n > 1).
+    lia.
+    apply H4 in H.
+    destruct H.
+    rewrite <- H in first_state.
+    right.
+    solve_fV first_state.
+    apply H3 in H.
+    right.
+    solve_fV H. *)
+
+
+  let H := fresh "H" in
+  pose proof (si n) as H.
+  destruct H as [H | H].
+  {
+    right_case 0 H is_path_pi first_state solve_fV.
+  }
+  {
+    next_state_gen (0) is_path_pi first_state.
+    {
+      let H0 := fresh "H0" in
+      pose proof (su 0 n H) as H0;
+      destruct H0 as [H0 | H0].
+      {
+          right_case 0 H0 is_path_pi first_state solve_fV.
+      }
+      {
+        let H00 := fresh "H0" in
+        pose proof (su (0+1) n H0) as H00;
+        destruct H00 as [H00 | H00].
+        {
+          next_state_gen (1) is_path_pi first_state.
+          {
+            right_case 1 H1 is_path_pi first_state solve_fV.
+          }
+          {
+            right_case 1 H1 is_path_pi first_state solve_fV.
+          }
+        }
+        {
+          let H' := fresh "H0" in
+          pose proof (su (0+1+1) n H1) as H';
+          destruct H' as [H' | H'].
+          {
+            
+            next_state_gen (1) is_path_pi first_state.
+            assert (first_state':= first_state).
+            next_state_gen (2) is_path_pi first_state.
+            right_case (1+1+1) H2 is_path_pi first_state solve_fV.
+            right_case (1+1+1) H2 is_path_pi first_state solve_fV.
+            next_state_gen (2) is_path_pi first_state.
+            right_case (1+1+1) H2 is_path_pi first_state solve_fV.
+            (* left. eexists 2. lia.
+            let tac1 := fun init_ => solve_fAX solve_fV init_ in 
+            tac1 first_state. *)
+          }
+          {
+            give_up.
+
+
+          }
+
+
+        }
+      }
+    }
+        next_state_gen (0+1) is_path_pi first_state.
+        {
+
+        compute in is_path_pi.
+        }
+        {
+
+        }
+        
+        {
+
+        }
+        {
+
+        }
+
+      }
+
+    }
+    {
+
+    }
+
+
+
+
+
+
+
+
+    (* let tac1 := fun init_ => solve_fAX solve_fV init_ in
+    left_case 0 is_path_pi first_state init_l tac1. progress auto. *)
+    let H0 := fresh "H0" in
+    pose proof (su 0 n H) as H0;
+    destruct H0 as [H0 | H0].
+    {
+      right_case (0+1) H0 is_path_pi first_state solve_fV.
+    }
+    {
+      (* let tac1 := fun init_ => solve_fAX solve_fV init_ in
+      left_case (0+1) is_path_pi first_state init_l tac1; progress auto. *)
+      let H00 := fresh "H0" in
+      pose proof (su (0+1) n H0) as H00;
+      destruct H00 as [H00 | H00].
+      {
+        right_case (0+1+1) H1 is_path_pi first_state solve_fV.
+      }
+      {
+        
+        let H000 := fresh "H0" in
+        pose proof (su (0+1+1) n H1) as H000;
+        destruct H000 as [H000 | H000].
+        {
+          assert (first_state':= first_state).
+          through_edges (3) is_path_pi first_state.
+          right_case (3) H2 is_path_pi first_state solve_fV.
+          right_case (3) H2 is_path_pi first_state solve_fV.
+          right_case (3) H2 is_path_pi first_state solve_fV.
+          through_edges (2) is_path_pi first_state'.
+          left.
+          eexists 2.
+          lia.
+          (* right_case (3) H2 is_path_pi first_state solve_fV. *)
+          
+          (* rewrite init_l in first_state; *)
+          
+          eexists i;[
+            lia 
+            |
+            compute;
+            through_edges i is_path_pi first_state;
+            tac first_state
+          ]. 
+          let tac1 := fun init_ => solve_fAX solve_fV init_ in
+          left_case (3) is_path_pi first_state init_l tac1.
+          right_case (3) H2 is_path_pi first_state solve_fV.
+
+        }
+      
+      }
+    }
+
+  }
+
 Defined.
+
