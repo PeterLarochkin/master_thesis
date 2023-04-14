@@ -11,7 +11,7 @@ Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
 .
 
 Ltac solve_fOr init_ tac1 tac2  := 
-(left; progress tac1 init_;progress auto) + (right; progress tac2 init_; progress auto) 
+(left; solve [tac1 init_](*;progress auto*)) + (right; solve[tac2 init_](*; progress auto*)) 
 .
 
 Ltac solve_fAX init_l tac1 := 

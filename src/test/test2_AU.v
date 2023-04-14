@@ -251,64 +251,7 @@ Ltac next_state_gen i is_path_pi first_state :=
   end
   )).
 
-
-
-Theorem F1: 
-forall st: state model_square, 
-(init model_square) st -> 
-satisfies (model_square) (fAU (fV 0) (fV 1)) st.
-Proof.
-intro st.
-intro init_l.
-intro.
-intro is_path_pi.
-intro first_state.
-(* compute. *)
-rewrite init_l in first_state.
-(* 
-tac = n :=
-tryif i=0
-then 
-
-
-*)
-(* let prev_H := first_state in
-let H := fresh "H" in
-let new := fresh "first_state" in
-assert(new:=prev_H);
-next_state_gen 0 is_path_pi new;
-let new_acc := fresh "new_acc" in
-unsplit  new prev_H new_acc; auto.
-
-let prev_H := new_acc in
-let H := fresh "H" in
-let new := fresh "first_state" in
-next_state_gen (0+1) is_path_pi new.
-assert(new:=prev_H).
-let new_acc := fresh "new_acc" in
-unsplit  new prev_H new_acc; auto. *)
-
-let rec loop i n last_stop prev_acc write_here :=
-(
-  tryif (assert (i=n); [progress lia | auto])
-  then 
-    assert(write_here:=prev_acc)
-  else
-    let new := fresh "first_state" in
-    assert(new:=last_stop)
-    ;
-    next_state_gen i is_path_pi new;
-    let new_acc := fresh "new_acc" in
-    let H := fresh "H" in
-    unsplit new prev_acc H; auto
-    ;loop (i+1) n new H write_here
-)
-in
-let acc := fresh "seq" in
-loop 0 6 first_state first_state acc.
-{
-  
-  let proof_ex_sat i seq := 
+Ltac proof_ex_sat i seq tac1 tac2:= 
   eexists i; compute; [
   
   let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m;
@@ -323,14 +266,14 @@ loop 0 6 first_state first_state acc.
         destruct sequence as (head & tail);
         apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m; [
           apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m;
-          (* tac1 *) solve_fV head
+          tac1 head
           |
           (loop (i-1) tail lt_m)
         ] 
     | _ => 
           apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m; [
           apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m;
-          (* tac1 *) solve_fV sequence
+          tac1 sequence
           |
           (lia)
         ]
@@ -341,113 +284,58 @@ loop 0 6 first_state first_state acc.
     let a := fresh "a" in
     let b := fresh "b" in
     destruct seq as (a&b);
-    solve_fV a
-  ] in
-  let rec big_loop i seq :=
-    lazymatch type of seq with 
-    | _ /\ _ =>
-      let a :=fresh "a" in
-      let b :=fresh "b" in
-      destruct seq as (a&b);
-      
-      (solve [proof_ex_sat (i-1) b]) +
-      (big_loop (i-1) b)
-      
-    | _ => idtac
-    end
-  in
-  big_loop 6 seq.
+    tac2 a
+  ].
 
-}
-{
-  eexists 4.
-  let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m.
+Ltac loop1 i n is_path_pi last_stop prev_acc write_here tac1 tac2 :=
+  (
+    tryif (assert (i=n); [progress lia | auto])
+    then 
+      assert(write_here:=prev_acc)
+    else
+      let new := fresh "first_state" in
+      assert(new:=last_stop)
+      ;
+      next_state_gen i is_path_pi new;
+      let new_acc := fresh "new_acc" in
+      let H := fresh "H" in
+      unsplit new prev_acc H; auto;
+      ((proof_ex_sat i prev_acc tac1 tac2);solve[auto]) +
+      (loop1 (i+1) n is_path_pi new H write_here tac1 tac2)
+  ).
 
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state2.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state1.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state0.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state.
-
-  lia.
-
-  (*tac2 *)solve_fV first_state3.
-}
-{
-  eexists 3.
-  let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state1.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state0.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state.
-
-  lia.
-
-  (*tac2 *)solve_fV first_state2.
-}
-{
-  eexists 3.
-  let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m.
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  (* tac1 *) solve_fV first_state1.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state0.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state.
-
-  lia.
-
-  (*tac2 *)solve_fV first_state2.
-
-}
-{
-  eexists 2.
-  let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state0.
-
-  apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m.
-  apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m.
-  solve_fV first_state.
-
-  lia.
-
-  (*tac2 *)solve_fV first_state1.
-}
+Ltac solve_fAU n init_l tac1 tac2:= 
+let pi := fresh "pi" in
+intro pi;
+let is_path_pi := fresh "is_path_pi" in
+intro is_path_pi;
+let first_state := fresh "first_state" in
+intro first_state;
+rewrite init_l in first_state;
+let acc := fresh "seq" in
+loop1 0 n is_path_pi first_state first_state acc tac1 tac2
+.
+Theorem F1: 
+forall st: state model_square, 
+(init model_square) st -> 
+satisfies (model_square) (fAU (fOr(fV 0)(fV 1)) (fAX (fV 1))) st.
+Proof.
+intro st.
+intro init_l.
+let tac2 := fun init_ => solve_fAX init_ solve_fV in
+let tac1 := fun init_ => solve_fOr init_ solve_fV solve_fV in
+solve_fAU 6 init_l tac1 tac2.
 Defined.
 
-
-
-
-
-
-
-
-
-
-
+Theorem F2: 
+forall st: state model_square, 
+(init model_square) st -> 
+satisfies (model_square) (fAU (fAX (fOr (fV 0)(fV 1))) (fAX (fV 1))) st.
+Proof.
+intro st.
+intro init_l.
+let tac := fun init_ => solve_fOr init_ solve_fV solve_fV in
+let tac1 := fun init_ => solve_fAX init_ tac in
+let tac2 := fun init_ => solve_fAX init_ solve_fV in
+solve_fAU 6 init_l tac1 tac2.
+Defined.
