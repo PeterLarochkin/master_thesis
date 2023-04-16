@@ -2,17 +2,38 @@ Require Import MC_CTL2.
 Require Import List. Import ListNotations.
 Require Import Lia.
 
-Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
+(* Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
   repeat split;
   let pre := fresh "pre" in
   intro pre; 
   rewrite init_ in pre; 
   (discriminate)+auto
-.
+. *)
+Ltac solve_fV init_ :=
+  repeat split;
+  let pre := fresh "pre" in
+  intro pre;
+  (
+    compute in init_; 
+    rewrite init_ in pre; 
+    discriminate
+  ) 
+  +
+  (
+    repeat (
+      (left; reflexivity) 
+      + 
+      (right; reflexivity) 
+      + 
+      right)
+  ).
 
 Ltac solve_fOr init_ tac1 tac2  := 
 (left; solve [tac1 init_](*;progress auto*)) + (right; solve[tac2 init_](*; progress auto*)) 
 .
+
+Ltac solve_fAnd tac1 tac2 init_ :=
+split; [> tac1 init_ | tac2 init_].
 
 Ltac solve_fAX init_l tac1 := 
   let next_state := fresh "next_state" in 
@@ -34,8 +55,7 @@ Ltac solve_fAX init_l tac1 :=
     ));
     tac1 init_l.
 
-Ltac solve_fAnd tac1 tac2 init_ :=
-split; [> tac1 init_ | tac2 init_].
+
 
 
 Fixpoint make_disjucntion_for_state_to{A} (s2: A)(states_in: list A) := 
@@ -67,10 +87,10 @@ Definition  trans_square' := to_Prop [
 
 
 Definition  label_square' := to_Prop [
-(one_square', [0]);
-(two_square', [1]); 
-(three_square', [1]); 
-(four_square', [2])].
+(one_square', [0;1;2;3;5]);
+(two_square', [1;3;4;5;6]); 
+(three_square', [1;10;12]); 
+(four_square', [2;13])].
 
 
 
@@ -91,6 +111,20 @@ Definition model_square': sts :=  {|
   label   := fun a b => label_square' b a; 
   serial  := serial_square' 
 |}.
+
+
+Theorem F0: 
+forall st: state model_square', 
+(init model_square') st -> 
+satisfies (model_square') (fV 5) st.
+Proof.
+  intro st.
+  intro init_.
+  solve_fV init_.
+Defined.
+
+
+
 
 Theorem F1: 
 forall st: state model_square', 

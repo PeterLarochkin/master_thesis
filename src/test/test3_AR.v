@@ -87,39 +87,41 @@ Ltac next_state_gen i is_path_pi first_state :=
   | _ => idtac
   end
   )).
-  Theorem usefull4: forall m n, S m = n -> m = n - 1.
+
+Theorem usefull4: forall m n, S m = n -> m = n - 1.
+lia.
+Defined.
+Definition usefull: forall m n:nat, S m <= n -> S m = n \/ S m <= n - 1.
+lia.
+Defined. 
+
+Definition usefull2: forall m n:nat, S m = S n -> m = n .
+lia.
+Defined.
+Definition usefull3: forall m n:nat, m <= n -> m - 1 <= n - 1.
+lia.
+Defined.
+Theorem exi:forall{m:sts}, forall (st:state m), exists k, st = k .
+Proof.
+  intros.
+  eexists st.
+  auto.
+Qed.
+Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
+Proof.
+  lia. 
+Qed.
+
+Theorem si (n:nat):n=0 \/ n >0 .
+Proof.
   lia.
-  Defined.
-  Definition usefull: forall m n:nat, S m <= n -> S m = n \/ S m <= n - 1.
+Qed.
+
+Theorem usefull5(k:nat):forall n, n>k -> S (n - 1) = n .
+Proof.
   lia.
-  Defined. 
-  
-  Definition usefull2: forall m n:nat, S m = S n -> m = n .
-  lia.
-  Defined.
-  Definition usefull3: forall m n:nat, m <= n -> m - 1 <= n - 1.
-  lia.
-  Defined.
-  Theorem exi:forall{m:sts}, forall (st:state m), exists k, st = k .
-  Proof.
-    intros.
-    eexists st.
-    auto.
-  Qed.
-  Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
-  Proof.
-    lia. 
-  Qed.
-  
-  Theorem si (n:nat):n=0 \/ n >0 .
-  Proof.
-    lia.
-  Qed.
-  
-  Theorem usefull5(k:nat):forall n, n>k -> S (n - 1) = n .
-  Proof.
-    lia.
-  Qed.
+Qed.
+
 Ltac proof_ex_sat i seq tac1 tac2:= 
   eexists i; compute; [
   
@@ -190,13 +192,15 @@ Inductive square : Set :=
 | two_square
 | three_square
 | four_square 
-| five_square.
+| five_square
+| six_square.
 Definition  trans_square := to_Prop [
 (one_square, [two_square; three_square]);
 (two_square, [two_square; three_square]);
 (three_square, [four_square] );
 (four_square, [five_square]);
-(five_square, [five_square])
+(five_square, [six_square]);
+(six_square, [six_square])
 ].
 
 
@@ -205,7 +209,8 @@ Definition  label_square := to_Prop [
 (two_square, [0]);
 (three_square, [0]);
 (four_square, [0;1]);
-(five_square, [2])
+(five_square, [2]);
+(six_square, [3])
 ].
 
 Definition  serial_square: forall w:square, exists (v:square), trans_square w v.
@@ -215,7 +220,8 @@ eexists two_square;repeat split; intro;try discriminate;left;auto.
 eexists two_square;repeat split; intro;try discriminate;left;auto.
 eexists four_square;repeat split; intro;try discriminate;left;auto.
 eexists five_square;repeat split; intro;try discriminate;left;auto.
-eexists five_square;repeat split; intro;try discriminate;left;auto.
+eexists six_square;repeat split; intro;try discriminate;left;auto.
+eexists six_square;repeat split; intro;try discriminate;left;auto.
 Defined.
 
 Definition init_square := fun st => st = one_square.
@@ -226,9 +232,6 @@ Definition model_square: sts :=  {|
   label   := fun a b => label_square b a; 
   serial  := serial_square 
 |}.
-
-
-
 
 Theorem F1: 
 forall st: state model_square, 
@@ -249,20 +252,20 @@ right. solve_fV H0.
 right. solve_fV H0.
 right. solve_fV H0.
 
-left.
+
 induction n.
 {
   rewrite H0 in first_state.
   discriminate.
 }
 {
-  
   pose proof (is_path_pi n).
   compute in H.
   destruct H.
   destruct H1.
   destruct H2.
   destruct H3.
+  destruct H4.
   pose proof (exi (pi n)) as H00; destruct H00 as [k0 H000].
   destruct k0.
   {
@@ -284,18 +287,110 @@ induction n.
     discriminate.
   }
   {
-    
+    left.
     eexists n.
     lia.
     solve_fV H000.
   } 
-  
+  {
+    apply H4 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H5 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+}
+
+
+induction n.
+{
+  rewrite H0 in first_state.
+  discriminate.
+}
+{
+  pose proof (is_path_pi n).
+  compute in H.
+  destruct H.
+  destruct H1.
+  destruct H2.
+  destruct H3.
+  destruct H4.
+  pose proof (exi (pi n)) as H00; destruct H00 as [k0 H000].
+  destruct k0.
+  {
+    apply H in H000.
+    destruct H000 as [H000|H000];
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H1 in H000.
+    destruct H000 as [H000|H000];
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H2 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H3 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  } 
+  {
+    left.
+    eexists n.
+    lia.
+    apply H4 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+    eexists n.
+    lia.
+    solve_fV H000.
+    apply IHn in H000.
+    destruct H000.
+    eexists x.
+    lia.
+    auto. 
+    apply H4 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H5 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+}
+
+
+
   {
     apply IHn in H000.
     destruct H000.
     eexists x.
     lia.
     auto. 
+  }
+  {
+    apply H1 in H000.
+    destruct H000 as [H000|H000];
+    rewrite H0 in H000;
+    discriminate.
+
+    
   }
 }
 Defined.
