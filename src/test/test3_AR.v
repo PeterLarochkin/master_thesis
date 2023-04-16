@@ -3,7 +3,7 @@ Require Import List. Import ListNotations.
 Require Import Lia.
 
 Ltac solve_fV init_ :=
-  compute; (*solve satisfies model (fV ?) (?st) problem *)
+  compute; (*solve (satisfies model (fV ?) (?st))  *)
   repeat split;
   let pre := fresh "pre" in
   intro pre; 
@@ -87,7 +87,39 @@ Ltac next_state_gen i is_path_pi first_state :=
   | _ => idtac
   end
   )).
-
+  Theorem usefull4: forall m n, S m = n -> m = n - 1.
+  lia.
+  Defined.
+  Definition usefull: forall m n:nat, S m <= n -> S m = n \/ S m <= n - 1.
+  lia.
+  Defined. 
+  
+  Definition usefull2: forall m n:nat, S m = S n -> m = n .
+  lia.
+  Defined.
+  Definition usefull3: forall m n:nat, m <= n -> m - 1 <= n - 1.
+  lia.
+  Defined.
+  Theorem exi:forall{m:sts}, forall (st:state m), exists k, st = k .
+  Proof.
+    intros.
+    eexists st.
+    auto.
+  Qed.
+  Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
+  Proof.
+    lia. 
+  Qed.
+  
+  Theorem si (n:nat):n=0 \/ n >0 .
+  Proof.
+    lia.
+  Qed.
+  
+  Theorem usefull5(k:nat):forall n, n>k -> S (n - 1) = n .
+  Proof.
+    lia.
+  Qed.
 Ltac proof_ex_sat i seq tac1 tac2:= 
   eexists i; compute; [
   
@@ -170,7 +202,7 @@ Definition  trans_square := to_Prop [
 
 Definition  label_square := to_Prop [
 (one_square, [0]);
-(two_square, [0;1]);
+(two_square, [0]);
 (three_square, [0]);
 (four_square, [0;1]);
 (five_square, [2])
@@ -195,39 +227,7 @@ Definition model_square: sts :=  {|
   serial  := serial_square 
 |}.
 
-Theorem usefull4: forall m n, S m = n -> m = n - 1.
-lia.
-Defined.
-Definition usefull: forall m n:nat, S m <= n -> S m = n \/ S m <= n - 1.
-lia.
-Defined. 
 
-Definition usefull2: forall m n:nat, S m = S n -> m = n .
-lia.
-Defined.
-Definition usefull3: forall m n:nat, m <= n -> m - 1 <= n - 1.
-lia.
-Defined.
-Theorem exi:forall{m:sts}, forall (st:state m), exists k, st = k .
-Proof.
-  intros.
-  eexists st.
-  auto.
-Qed.
-Theorem  su(k:nat): forall n, n > k -> n = S k \/ n > S k.
-Proof.
-  lia. 
-Qed.
-
-Theorem si (n:nat):n=0 \/ n >0 .
-Proof.
-  lia.
-Qed.
-
-Theorem usefull5(k:nat):forall n, n>k -> S (n - 1) = n .
-Proof.
-  lia.
-Qed.
 
 
 Theorem F1: 
@@ -248,25 +248,59 @@ right; solve_fV H0.
 right. solve_fV H0.
 right. solve_fV H0.
 right. solve_fV H0.
-pose proof (si n) as base.
-destruct base as [base|base].
-{
-  rewrite base in H0.
-  rewrite H0 in first_state. discriminate.
-}
-{
-  pose proof (usefull5 0 n base).
-  left.
-  eexists (n-1). lia.
-  pose proof (is_path_pi (n-1)).
-  rewrite H in H1.
-  pose proof (exi (pi (n-1))) as H2; destruct H2 as [k0 H3].
-  destruct (k0).
-  compute in H1.
-}
-
 
 left.
+induction n.
+{
+  rewrite H0 in first_state.
+  discriminate.
+}
+{
+  
+  pose proof (is_path_pi n).
+  compute in H.
+  destruct H.
+  destruct H1.
+  destruct H2.
+  destruct H3.
+  pose proof (exi (pi n)) as H00; destruct H00 as [k0 H000].
+  destruct k0.
+  {
+    apply H in H000.
+    destruct H000 as [H000|H000];
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H1 in H000.
+    destruct H000 as [H000|H000];
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    apply H2 in H000.
+    (* destruct H000 as [H000|H000]; *)
+    rewrite H0 in H000;
+    discriminate.
+  }
+  {
+    
+    eexists n.
+    lia.
+    solve_fV H000.
+  } 
+  
+  {
+    apply IHn in H000.
+    destruct H000.
+    eexists x.
+    lia.
+    auto. 
+  }
+}
+Defined.
+  
+ 
  
 
 
