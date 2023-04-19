@@ -29,31 +29,13 @@ Ltac solve_fV init_ :=
   ).
 
 Ltac solve_fOr init_ tac1 tac2  := 
-(left; solve [tac1 init_](*;progress auto*)) + (right; solve[tac2 init_](*; progress auto*)) 
+(left; solve [tac1 init_](*;progress auto*)) + (right; solve[ tac2 init_ ](*; progress auto*)) 
 .
 
 Ltac solve_fAnd tac1 tac2 init_ :=
 split; [> tac1 init_ | tac2 init_].
 
-Ltac solve_fAX init_l tac1 := 
-  let next_state := fresh "next_state" in 
-  intro next_state;
-  let trans_to_new_state := fresh "trans_to_new_state" 
-  in 
-  intro trans_to_new_state;
-  compute in trans_to_new_state;
-  repeat (
-    let a := fresh "a" in
-    let b := fresh "b" in
-    destruct trans_to_new_state as (a&b);
-    ((apply a in init_l)+(apply b in init_l));
-    (
-      lazymatch type of init_l with 
-      | _ \/ _ => repeat( destruct init_l as [init_l|init_l])
-      | _ => idtac
-      end
-    ));
-    tac1 init_l.
+
 
 
 
@@ -88,9 +70,9 @@ Definition  trans_square' := to_Prop [
 
 Definition  label_square' := to_Prop [
 (one_square', [0;1;2;3;5]);
-(two_square', [1;3;4;5;6]); 
+(two_square', [1;3;4;5;6;12]); 
 (three_square', [1;10;12]); 
-(four_square', [2;13])].
+(four_square', [2;12])].
 
 
 
@@ -124,7 +106,65 @@ Proof.
 Defined.
 
 
+(* Ltac solve_fAX init_ tac1 := 
+  let next_state := fresh "next_state" in 
+  intro next_state;
+  let trans_to_new_state := fresh "trans_to_new_state" in 
+  intro trans_to_new_state;
+  compute in trans_to_new_state;
+  repeat (
+    let a := fresh "a" in
+    let b := fresh "b" in
+    destruct trans_to_new_state as (a&b);
+    ((apply a in init_)+(apply b in init_));
+    (
+      lazymatch type of init_ with 
+      | _ \/ _ => repeat(destruct init_ as [init_|init_])
+      | _ => idtac
+      end
+    ));
+  tac1 init_. *)
 
+Ltac solve_fAX init_ tac1 := 
+  let next_state := fresh "next_state" in 
+  intro next_state;
+  let trans_to_next_state := fresh "trans_to_next_state" in 
+  intro trans_to_next_state;
+  compute in trans_to_next_state;
+  let rec loop conj_hyp init_ :=
+    lazymatch type of conj_hyp with
+    | _ /\ _ => 
+      let a := fresh "a" in let b := fresh "b" in
+      destruct conj_hyp as (a & b);
+      (apply a in init_) + (apply b in init_) + (loop b)
+    | _ => 
+      idtac
+    end
+  in
+  (* init_ is disj *)
+  loop trans_to_next_state init_;
+  repeat (
+    lazymatch type of init_ with
+    | _ \/ _  =>
+      destruct init_ as [init_ | init_]
+    | _ => 
+      idtac
+    end
+  );
+  tac1 init_
+.
+
+
+Theorem F2: 
+forall st: state model_square', 
+(init model_square') st -> 
+satisfies (model_square') (fAX (fV 12)) st.
+Proof.
+intro st.
+intro init_l.
+compute.
+solve_fAX init_l solve_fV.
+Qed.
 
 Theorem F1: 
 forall st: state model_square', 
@@ -140,6 +180,9 @@ let sol :=
     (fun init_ => solve_fOr init_ solve_fV sol_or)
 in
 solve_fAX init_l sol.
+Qed.
+
+
 
 
 

@@ -14,25 +14,34 @@ Ltac solve_fOr init_ tac1 tac2  :=
 (left; progress tac1 init_;progress auto) + (right; progress tac2 init_; progress auto) 
 .
 
-Ltac solve_fAX init_l tac1 := 
+Ltac solve_fAX init_ tac1 := 
   let next_state := fresh "next_state" in 
   intro next_state;
-  let trans_to_new_state := fresh "trans_to_new_state" 
-  in 
-  intro trans_to_new_state;
-  compute in trans_to_new_state;
+  let trans_to_next_state := fresh "trans_to_next_state" in 
+  intro trans_to_next_state;
+  compute in trans_to_next_state;
+  let rec loop conj_hyp init_ :=
+    lazymatch type of conj_hyp with
+    | _ /\ _ => 
+      let a := fresh "a" in let b := fresh "b" in
+      destruct conj_hyp as (a & b);
+      (apply a in init_) + (apply b in init_) + (loop b)
+    | _ => 
+      idtac
+    end
+  in
+  (* init_ is disj *)
+  loop trans_to_next_state init_;
   repeat (
-    let a := fresh "a" in
-    let b := fresh "b" in
-    destruct trans_to_new_state as (a&b);
-    ((apply a in init_l)+(apply b in init_l));
-    (
-      lazymatch type of init_l with 
-      | _ \/ _ => repeat( destruct init_l as [init_l|init_l])
-      | _ => idtac
-      end
-    ));
-    tac1 init_l.
+    lazymatch type of init_ with
+    | _ \/ _  =>
+      destruct init_ as [init_ | init_]
+    | _ => 
+      idtac
+    end
+  );
+  tac1 init_
+.
 
 Ltac solve_fAnd tac1 tac2 init_ :=
 split; [> tac1 init_ | tac2 init_].
@@ -56,7 +65,9 @@ end
 Definition to_Prop{A B}(list_connections: list (B * (list A))): B -> A -> Prop :=
 (fun s1 s2 => make_prop s1 s2 list_connections).
 
-
+Locate "_ - ".
+Print Nat.sub.
+Compute (fun m => match m with S n' => n' | O => O end) 4.
 
 Theorem usefull4: forall m n, S m = n -> m = n - 1.
 lia.
@@ -230,10 +241,20 @@ lazymatch type of H1 with
 | ?t1 => 
   lazymatch type of H2 with 
   | ?t2 => 
-    assert (H12: t1 /\ t2)
+    assert (H12: t1 /\ t2);
+    [
+      split; [
+        apply H1 
+        |
+        apply H2
+      ]
+      | 
+      idtac
+    ]
   end
 end  
 .
+
 
 
 Ltac next_state_gen i is_path_pi first_state :=
@@ -242,19 +263,31 @@ Ltac next_state_gen i is_path_pi first_state :=
   compute in is_path_pi_i;
   let a := fresh "a" in
   let b := fresh "b" in
-  destruct is_path_pi_i as (a&b);
-  ((compute in a; apply a in first_state)+(apply b in first_state));
-  (repeat (
-  lazymatch type of first_state with 
-  | _ \/ _ => (destruct first_state as [first_state|first_state])
-  | _ => idtac
-  end
-  )).
+  let rec loop conj_hyp init_ :=
+    lazymatch type of conj_hyp with
+    | _ /\ _ => 
+      let a := fresh "a" in let b := fresh "b" in
+      destruct conj_hyp as (a & b);
+      (apply a in init_) + (apply b in init_) + (loop b)
+    | _ => 
+      idtac
+    end
+  in
+  (* init_ is disj *)
+  loop is_path_pi_i first_state;
+  repeat (
+    lazymatch type of first_state with
+    | _ \/ _  =>
+      destruct first_state as [first_state | first_state]
+    | _ => 
+      idtac
+    end
+  ).
 
 Ltac proof_ex_sat i seq tac1 tac2:= 
   eexists i; compute; [
-  
-  let m := fresh "m" in intro m; let lt_m := fresh "lt_m" in  intro lt_m;
+  let m := fresh "m" in intro m; 
+  let lt_m := fresh "lt_m" in intro lt_m;
   let a := fresh "a" in
   let b := fresh "b" in
   destruct seq as (a&b);
@@ -299,7 +332,7 @@ Ltac loop1 i n is_path_pi last_stop prev_acc write_here tac1 tac2 :=
       next_state_gen i is_path_pi new;
       let new_acc := fresh "new_acc" in
       let H := fresh "H" in
-      unsplit new prev_acc H; auto;
+      unsplit new prev_acc H;
       ((proof_ex_sat i prev_acc tac1 tac2);solve[auto]) +
       (loop1 (i+1) n is_path_pi new H write_here tac1 tac2)
   ).
@@ -339,3 +372,18 @@ let tac1 := fun init_ => solve_fAX init_ tac in
 let tac2 := fun init_ => solve_fAX init_ solve_fV in
 solve_fAU 6 init_l tac1 tac2.
 Defined.
+
+
+Theorem F_unused: 
+forall st: state model_square, 
+(init model_square) st -> 
+satisfies (model_square) (fAU (fOr(fV 0)(fV 1)) (fAX (fV 1))) st.
+Proof.
+intro st.
+intro init_l.
+intro.
+intro.
+intro.
+
+(* compute. *)
+eexists 2.

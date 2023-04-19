@@ -12,31 +12,32 @@ Ltac solve_fV init_ :=
 .
 
 Ltac solve_fOr init_ tac1 tac2  := 
-(left; progress tac1 init_;progress auto) + (right; progress tac2 init_; progress auto) 
+(left; solve [tac1 init_]) + (right; solve[ tac2 init_]) 
 .
 
-Ltac solve_fAX init_l tac1 := 
+Ltac solve_fAnd tac1 tac2 init_ :=
+split; [> tac1 init_ | tac2 init_].
+
+Ltac solve_fAX init_ tac1 := 
   let next_state := fresh "next_state" in 
   intro next_state;
-  let trans_to_new_state := fresh "trans_to_new_state" 
-  in 
+  let trans_to_new_state := fresh "trans_to_new_state" in 
   intro trans_to_new_state;
   compute in trans_to_new_state;
   repeat (
     let a := fresh "a" in
     let b := fresh "b" in
     destruct trans_to_new_state as (a&b);
-    ((apply a in init_l)+(apply b in init_l));
+    ((apply a in init_)+(apply b in init_));
     (
-      lazymatch type of init_l with 
-      | _ \/ _ => repeat( destruct init_l as [init_l|init_l])
+      lazymatch type of init_ with 
+      | _ \/ _ => repeat( destruct init_ as [init_|init_])
       | _ => idtac
       end
     ));
-    tac1 init_l.
+  tac1 init_.
 
-Ltac solve_fAnd tac1 tac2 init_ :=
-split; [> tac1 init_ | tac2 init_].
+
 
 
 Fixpoint make_disjucntion_for_state_to{A} (s2: A)(states_in: list A) := 
@@ -46,7 +47,7 @@ match states_in with
 | nil => False
 end
 .
-
+Print make_disjucntion_for_state_to.
 Fixpoint make_prop{A B} (s1:A )( s2:B) (list_connections: list (A * (list B))):Prop := 
 match list_connections with 
 | (b1,b2)::nil => (s1 = b1 -> (make_disjucntion_for_state_to s2 b2))
@@ -59,8 +60,8 @@ Definition to_Prop{A B}(list_connections: list (B * (list A))): B -> A -> Prop :
 
 
 
-
-
+Print pair.
+Print list.
 
 Ltac unsplit H1 H2 H12 :=
 lazymatch type of H1 with
@@ -171,7 +172,7 @@ Ltac loop1 i n is_path_pi last_stop prev_acc write_here tac1 tac2 :=
       let new_acc := fresh "new_acc" in
       let H := fresh "H" in
       unsplit new prev_acc H; auto;
-      ((proof_ex_sat i prev_acc tac1 tac2);solve[auto]) +
+      ((proof_ex_sat i prev_acc tac1 tac2);solve[lia]) +
       (loop1 (i+1) n is_path_pi new H write_here tac1 tac2)
   ).
 
