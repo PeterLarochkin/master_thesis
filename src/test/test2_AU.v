@@ -2,17 +2,31 @@ Require Import MC_CTL2.
 Require Import List. Import ListNotations.
 Require Import Lia.
 
-Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
+Ltac solve_fV init_ :=
   repeat split;
   let pre := fresh "pre" in
-  intro pre; 
-  rewrite init_ in pre; 
-  (discriminate)+auto
-.
+  intro pre;
+  (
+    compute in init_; 
+    rewrite init_ in pre; 
+    discriminate
+  ) 
+  +
+  (
+    repeat (
+      (left; reflexivity) 
+      + 
+      (right; reflexivity) 
+      + 
+      right)
+  ).
 
 Ltac solve_fOr init_ tac1 tac2  := 
-(left; progress tac1 init_;progress auto) + (right; progress tac2 init_; progress auto) 
+(left; solve [tac1 init_](*;progress auto*)) + (right; solve[ tac2 init_ ](*; progress auto*)) 
 .
+
+Ltac solve_fAnd tac1 tac2 init_ :=
+split; [> tac1 init_ | tac2 init_].
 
 Ltac solve_fAX init_ tac1 := 
   let next_state := fresh "next_state" in 
@@ -43,10 +57,6 @@ Ltac solve_fAX init_ tac1 :=
   tac1 init_
 .
 
-Ltac solve_fAnd tac1 tac2 init_ :=
-split; [> tac1 init_ | tac2 init_].
-
-
 Fixpoint make_disjucntion_for_state_to{A} (s2: A)(states_in: list A) := 
 match states_in with
 | head :: nil => s2 = head
@@ -65,9 +75,7 @@ end
 Definition to_Prop{A B}(list_connections: list (B * (list A))): B -> A -> Prop :=
 (fun s1 s2 => make_prop s1 s2 list_connections).
 
-Locate "_ - ".
-Print Nat.sub.
-Compute (fun m => match m with S n' => n' | O => O end) 4.
+(* Compute (fun m => match m with S n' => n' | O => O end) 4. *)
 
 Theorem usefull4: forall m n, S m = n -> m = n - 1.
 lia.
@@ -320,21 +328,21 @@ Ltac proof_ex_sat i seq tac1 tac2:=
     tac2 a
   ].
 
-Ltac loop1 i n is_path_pi last_stop prev_acc write_here tac1 tac2 :=
+Ltac loop1 i n is_path_pi last_stop prev_acc (*write_here*) tac1 tac2 :=
   (
-    tryif (assert (i=n); [progress lia | auto])
+    tryif (assert (i=n); [solve [lia] | auto])
     then 
-      assert(write_here:=prev_acc)
+      (* assert(write_here:=prev_acc) *)
+      fail
     else
       let new := fresh "first_state" in
-      assert(new:=last_stop)
-      ;
+      assert(new:=last_stop);
       next_state_gen i is_path_pi new;
-      let new_acc := fresh "new_acc" in
+      (* let new_acc := fresh "new_acc" in *)
       let H := fresh "H" in
       unsplit new prev_acc H;
-      ((proof_ex_sat i prev_acc tac1 tac2);solve[auto]) +
-      (loop1 (i+1) n is_path_pi new H write_here tac1 tac2)
+      (solve [(proof_ex_sat i prev_acc tac1 tac2)]) +
+      (loop1 (i+1) n is_path_pi new H (*write_here*) tac1 tac2)
   ).
 
 Ltac solve_fAU n init_l tac1 tac2:= 
@@ -346,7 +354,7 @@ let first_state := fresh "first_state" in
 intro first_state;
 rewrite init_l in first_state;
 let acc := fresh "seq" in
-loop1 0 n is_path_pi first_state first_state acc tac1 tac2
+loop1 0 n is_path_pi first_state first_state (*acc*) tac1 tac2
 .
 Theorem F1: 
 forall st: state model_square, 
@@ -374,16 +382,25 @@ solve_fAU 6 init_l tac1 tac2.
 Defined.
 
 
-Theorem F_unused: 
+
+
+Theorem F1_unused: 
 forall st: state model_square, 
 (init model_square) st -> 
 satisfies (model_square) (fAU (fOr(fV 0)(fV 1)) (fAX (fV 1))) st.
 Proof.
+
 intro st.
 intro init_l.
+lazymatch goal with
+| [|- satisfies ?model_ ?f ?state_] =>
+  lazymatch f with
+  | 
+  
+end.
 intro.
 intro.
 intro.
-
 (* compute. *)
 eexists 2.
+Admitted.
