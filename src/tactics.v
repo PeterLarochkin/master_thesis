@@ -217,22 +217,6 @@ Ltac solver n init_l :=
     end in 
 lazymatch goal with
 | [|- satisfies ?model_ ?f ?state_] => 
-  lazymatch f with
-  | fAX ?f_1 => 
-    let tac1 := applicator f_1 in
-    solve_fAX init_l tac1
-  | fOr ?f_1 ?f_2 => 
-    let tac1 := applicator f_1 in
-    let tac2 := applicator f_2 in
-    solve_fOr init_l tac1 tac2
-  | fAnd ?f_1 ?f_2 => 
-    let tac1 := applicator f_1 in
-    let tac2 := applicator f_2 in
-    solve_fAnd init_l tac1 tac2
-  | fAU ?f_1 ?f_2 => 
-    let tac1 := applicator f_1 in
-    let tac2 := applicator f_2 in
-    solve_fAU n init_l tac1 tac2
-  | fV ?n => solve_fV init_l 
-  end 
+    let tac := applicator f in 
+    tac init_l
 end.
