@@ -93,7 +93,7 @@ Defined.
 
 
 
-Ltac solve_AU n max_of_state init_l solve_subformula1 solve_subformula2 := 
+(* Ltac solve_AU n max_of_state init_l solve_subformula1 solve_subformula2 := 
 let solve_AU max_of_state :=
     let path_pi := fresh "path_pi" in
     intro path_pi;
@@ -195,7 +195,7 @@ let solve_AU max_of_state :=
     in 
     sol_AU n
 in
-solve_AU max_of_state.
+solve_AU max_of_state. *)
 
 
 Inductive square : Set :=  
@@ -384,7 +384,7 @@ Defined.
 
 
 
-Theorem F1_unused: 
+(* Theorem F1_unused: 
 forall st: state model_square, 
 (init model_square) st -> 
 satisfies (model_square) (fAU (fOr(fV 0)(fV 1)) (fAX (fV 1))) st.
@@ -403,4 +403,4 @@ intro.
 intro.
 (* compute. *)
 eexists 2.
-Admitted.
+Admitted. *)

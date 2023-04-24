@@ -26,8 +26,8 @@ Inductive le (n : nat) : nat -> Prop :=
 
 *)
 Locate "_ = _".
-Check @eq_refl nat 1.
-Check eq 0 1.
+(* Check @eq_refl nat 1.
+Check eq 0 1. *)
 (* Inductive eq (A : Type) (x : A) : A -> Prop :=  eq_refl : x = x. *)
 Inductive ex (A:Type) (P: A -> Prop) : Prop :=
   ex_intro : forall x:A, forall _: P x, ex A P.

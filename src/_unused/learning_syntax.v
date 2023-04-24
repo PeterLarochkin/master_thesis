@@ -353,7 +353,7 @@ Inductive hlist : (list Set) -> Type :=
 | HNil : hlist nil
 | HCons : forall (x:Set) (ls:list Set), x -> hlist ls -> hlist (x::ls).
 
-Check S 0.
+(* Check S 0. *)
 
 
 
@@ -567,8 +567,8 @@ Inductive form :=
 | fAX  of form
 | fAR  of form & form
 | fAU  of form & form.
-Print form.
-Check @cons.
+(* Print form.
+Check @cons. *)
 
 Lemma eq_form_dec (s t : form) : { s = t} + { s <> t}.
 Proof. decide equality; apply eq_comparable. Qed.
@@ -649,7 +649,7 @@ Record sts := STS {
   label  : var (*AP*) -> state -> Prop;
   serial : forall w:state, exists v, trans w v
 }.
-Check STS.
+(* Check STS. *)
 
 
 
@@ -661,7 +661,7 @@ Inductive sts3 :=
        (var -> state2 -> Prop) ->
        (forall w : state2, exists v : state2, trans2 w v) -> sts3
 .
-Check STS3.
+(* Check STS3. *)
 
 Inductive sts4 := 
 | STS4: forall (state : Type) (trans:state -> state -> Prop), (var -> state -> Prop) -> (forall w : state, exists v : state, trans w v) -> sts4
@@ -701,7 +701,7 @@ match s with
 | fAU s t  => pAU (@trans5 M) (satisfies5 M s) (satisfies5 M t)
 end.
 
-Check @satisfies5.
+(* Check @satisfies5. *)
 
 
 Fixpoint satisfies (M : sts) (s : form) := 
@@ -745,23 +745,23 @@ Definition serial_bool: forall w:bool, exists v, trans_bool w v.
 intros. case w. all: [>eexists false | eexists true]; compute; apply I.
 Defined.  
 
-Print sts.
+(* Print sts.
 Print nat.
-Check STS.
+Check STS. *)
 
 (* Inductive sts_t: Prop :=
 | sts_constr:forall (state : Type) (trans : state -> state -> Prop), (var -> state -> Prop) -> (forall w : state, exists v : state, trans w v) -> sts_t . *)
 
 
 
-Print form.
-Check fAX (fV 0).
+(* Print form. *)
+(* Check fAX (fV 0). *)
 Definition model_bool: sts :=  
   {| state := bool; trans := trans_bool; label := label_bool; serial := serial_bool |}.
 
-  Check STS (state:=bool) (trans:=trans_bool)(label_bool) serial_bool.
-Check state model_bool.
-Print form.
+  (* Check STS (state:=bool) (trans:=trans_bool)(label_bool) serial_bool.
+Check state model_bool. *)
+(* Print form. *)
 
 
 Theorem check1: satisfies(M:=model_bool) (fAX (( (fV 1)))) true.
@@ -771,7 +771,7 @@ Proof.
   auto.
 Qed.
 (* GOAL!!! *)
-Check forall (m:sts)(f: form) (s: state m), satisfies f s.
+(* Check forall (m:sts)(f: form) (s: state m), satisfies f s. *)
 Theorem check2(m:sts)(f: form) (s: state m): satisfies f s.
 
 Proof.

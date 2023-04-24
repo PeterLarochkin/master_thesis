@@ -360,7 +360,7 @@ Proof.
   compute.
   contradict_fAX model_square' st_l sat_hyp init_l contradict_fV.
 Defined.
-Print ex.
+(* Print ex. *)
 
 
 

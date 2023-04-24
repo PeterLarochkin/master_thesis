@@ -1,7 +1,7 @@
 Require Import MC_CTL2.
 Require Import List. Import ListNotations.
 Require Import Lia.
-Print and.
+(* Print and. *)
 Ltac solve_fV init_ := (*solve satisfies model (fV ?) (?st) problem *)
   repeat split;
   let pre := fresh "pre" in

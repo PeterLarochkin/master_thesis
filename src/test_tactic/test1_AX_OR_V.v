@@ -334,7 +334,7 @@ lazymatch goal with
   end 
 end.
 
-Theorem F1_unused: 
+Goal  
 forall st: state model_square', 
 (init model_square') st -> 
 satisfies (model_square') (fAX (fOr (fV 1) (fOr (fV 1) (fV 2)))) st.

@@ -15,7 +15,7 @@ forall pi : nat -> st, path st trans pi -> (pi 0 = w) -> p_until st pred1 pred2 
 
 Definition pAR (st : Type) (trans : st -> st -> Prop) (pred1 pred2: st -> Prop) (w : st) := 
 forall pi : nat -> st, path st trans pi -> (pi 0 = w) -> p_release st pred1 pred2 pi.
-Print and.
+(* Print and. *)
 
 
 Inductive form : Set :=

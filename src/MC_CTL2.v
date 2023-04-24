@@ -49,3 +49,22 @@ Fixpoint satisfies (M : sts) (s : form){struct s}:state M -> Prop :=
   | fAR  s0 t => fun w : state M => pAR (state M) (trans M) (satisfies M s0) (satisfies M t) w
   | fAU  s0 t => fun w : state M => pAU (state M) (trans M) (satisfies M s0) (satisfies M t) w
   end: state M -> Prop ).
+
+
+Fixpoint make_disjucntion_for_state_to{A} (s2: A)(states_in: list A) := 
+match states_in with
+| cons head nil => s2 = head
+| cons head tail => s2 = head \/ (make_disjucntion_for_state_to s2 tail)
+| nil => False
+end
+.
+
+Fixpoint make_prop{A B} (s1:A )( s2:B) (list_connections: list (A * (list B))):Prop := 
+match list_connections with 
+| cons (pair b1 b2) nil => (s1 = b1 -> (make_disjucntion_for_state_to s2 b2))
+| cons (pair b1 b2) tail => (s1 = b1 -> (make_disjucntion_for_state_to s2 b2)) /\ (make_prop s1 s2 tail)
+| nil => False  
+end 
+.
+Definition to_Prop{A B}(list_connections: list (B * (list A))): B -> A -> Prop :=
+(fun s1 s2 => make_prop s1 s2 list_connections).

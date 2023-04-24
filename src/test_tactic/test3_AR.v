@@ -47,7 +47,7 @@ match states_in with
 | nil => False
 end
 .
-Print make_disjucntion_for_state_to.
+(* Print make_disjucntion_for_state_to. *)
 Fixpoint make_prop{A B} (s1:A )( s2:B) (list_connections: list (A * (list B))):Prop := 
 match list_connections with 
 | (b1,b2)::nil => (s1 = b1 -> (make_disjucntion_for_state_to s2 b2))
@@ -59,9 +59,9 @@ Definition to_Prop{A B}(list_connections: list (B * (list A))): B -> A -> Prop :
 (fun s1 s2 => make_prop s1 s2 list_connections).
 
 
-
+(* 
 Print pair.
-Print list.
+Print list. *)
 
 Ltac unsplit H1 H2 H12 :=
 lazymatch type of H1 with
@@ -252,9 +252,9 @@ right; solve_fV H0.
 right. solve_fV H0.
 right. solve_fV H0.
 right. solve_fV H0.
+Admitted.
 
-
-induction n.
+(* induction n.
 {
   rewrite H0 in first_state.
   discriminate.
@@ -394,7 +394,7 @@ induction n.
     
   }
 }
-Defined.
+Defined. *)
   
  
  

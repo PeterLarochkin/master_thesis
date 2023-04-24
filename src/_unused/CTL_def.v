@@ -114,11 +114,11 @@ Section Characterizations.
 
   Definition pcons x pi k := if k is k.+1 then pi k else x.
   Definition ptail pi k := pi k.+1.
-  Check pcons.
+  (* Check pcons. *)
   
   Lemma path_pcons x pi : e x (pi 0) -> path pi -> path (pcons x pi). 
   Proof. move => H1 H2 [|k] //. exact: H2. Qed.
-  Check path_pcons.
+  (* Check path_pcons. *)
   Lemma path_ptail pi : path pi -> path (ptail pi).
   Proof. move => H n. exact: H. Qed.
 
