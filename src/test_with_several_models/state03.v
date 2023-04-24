@@ -123,7 +123,4 @@ intro st. intro init_.
 solver 3 init_.
 Qed.
 
-Goal True.
-idtac "3-state model passed".
-auto.
-Qed.
+Goal True. idtac "3-state model passed". auto. Defined.

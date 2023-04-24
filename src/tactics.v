@@ -110,14 +110,14 @@ Ltac proof_ex_sat i seq tac1 tac2:=
         destruct sequence as (head & tail);
         apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m; [
           apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m;
-          tac1 head
+          (solve [tac1 head])
           |
           (loop (i-1) tail lt_m)
         ] 
     | _ => 
           apply usefull in lt_m;destruct lt_m as [lt_m| lt_m]; compute in lt_m; [
           apply usefull4 in lt_m; compute in lt_m ;rewrite lt_m;
-          tac1 sequence
+          (solve [tac1 sequence])
           |
           (lia)
         ]
@@ -128,7 +128,7 @@ Ltac proof_ex_sat i seq tac1 tac2:=
     let a := fresh "a" in
     let b := fresh "b" in
     destruct seq as (a&b);
-    tac2 a
+    (solve [tac2 a])
   ].
 
 Ltac loop1 i n is_path_pi last_stop prev_acc (*write_here*) tac1 tac2 :=
@@ -156,7 +156,7 @@ intro is_path_pi;
 let first_state := fresh "first_state" in
 intro first_state;
 rewrite init_l in first_state;
-(eexists 0; [lia | tac2 first_state]; solve [idtac] )
+(eexists 0; [lia | solve [tac2 first_state]] )
 +
 (let acc := fresh "seq" in
 loop1 0 n is_path_pi first_state first_state (*acc*) tac1 tac2)
@@ -188,7 +188,7 @@ Ltac solve_fAX init_ tac1 :=
       idtac
     end
   );
-  tac1 init_
+  solve [tac1 init_]
 .
 
 Ltac solver n init_l := 

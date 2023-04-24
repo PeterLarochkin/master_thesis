@@ -63,12 +63,71 @@ Qed.
 
 
 Goal 
-forall st: state model1, (init model1) st -> satisfies (model1) (fAU (fOr (fAU (fF) (fV 6))(fV 1)) (fV 6) ) st.
+forall st: state model1, (init model1) st -> satisfies (model1) (fAU (fOr (fAU (fV 100) (fV 6))(fV 1)) (fV 6) ) st.
 intro st. intro init_.
 solver 4 init_.
 Qed.
 
-Goal True.
-idtac "4-state model passed".
-auto.
+
+(* Model 2 *)
+Definition  trans_model2 := to_Prop [
+(one, [one;two]);
+(two, [three;four]);
+(three, [four]);
+(four, [four])
+].
+
+
+Definition  label_model2 := to_Prop [
+(one, [1;2;3;16]);
+(two, [10;11;12;16]);
+(three, [16;17]);
+(four, [101;100])
+].
+
+Definition  serial_model2: forall w:model, exists (v:model), trans_model2 w v.
+intros.
+case w.
+eexists one;repeat split; intro;try discriminate;left;auto.
+eexists three;repeat split; intro;try discriminate;left;auto.
+eexists four;repeat split; intro;try discriminate;left;auto.
+eexists four;repeat split; intro;try discriminate;left;auto.
+Defined.
+
+Definition init_model2 := fun st => st = one.
+Definition model2: sts :=  {| 
+  state   := model; 
+  trans   := trans_model2; 
+  init    := init_model2; 
+  label   := fun a b => label_model2 b a; 
+  serial  := serial_model2
+|}.
+
+Goal 
+forall st: state model2, (init model2) st -> satisfies (model2) (fAnd (fV 1) (fAU (fAX (fV 16)) (fOr (fV 101 )(fV 16)))) st.
+intro st. intro init_.
+solver 4 init_.
 Qed.
+
+
+Goal 
+forall st: state model2, (init model2) st -> satisfies (model2) (fOr (fV 16)(fAU (fV 16)(fV 101))) st.
+intro st. intro init_.
+solver 4 init_.
+Qed.
+
+Goal 
+forall st: state model2, (init model2) st -> satisfies (model2) (fAX (fOr (fV 1) (fAU (fV 16)(fV 101)))) st.
+intro st. intro init_.
+solver 4 init_.
+Qed.
+
+
+Goal 
+forall st: state model2, (init model2) st -> satisfies (model2) (fAX (fOr (fV 1) (fAX (fOr (fV 17)(fV 100))))) st.
+intro st. intro init_.
+solver 4 init_.
+Qed.
+
+
+Goal True. idtac "4-state model passed". auto. Defined.

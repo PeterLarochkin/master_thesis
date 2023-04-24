@@ -134,7 +134,4 @@ intro st. intro init_.
 solver 2 init_.
 Qed.
 
-Goal True.
-idtac "2-state model passed".
-auto.
-Qed.
+Goal True. idtac "2-state model passed". auto. Defined.
