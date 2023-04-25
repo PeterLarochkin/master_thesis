@@ -195,24 +195,32 @@ Ltac solver n init_l :=
   let rec applicator f  :=
     lazymatch f with
     | fAX ?f_1 => 
-      fun init_ => 
-        let tac_1 := (applicator f_1) in 
-        solve_fAX init_ tac_1
+        let tac init_ := 
+          let tac_1 := (applicator f_1) in 
+          solve_fAX init_ tac_1
+        in
+        tac
     | fOr ?f_1 ?f_2 => 
-      fun init_ => 
-        let tac_1 := (applicator f_1) in
-        let tac_2 := (applicator f_2) in 
-        solve_fOr init_ tac_1 tac_2
+        let tac init_ := 
+          let tac_1 := (applicator f_1) in
+          let tac_2 := (applicator f_2) in 
+          solve_fOr init_ tac_1 tac_2
+        in 
+        tac
     | fAnd ?f_1 ?f_2 => 
-        fun init_ => 
+        let tac init_ := 
           let tac_1 := (applicator f_1) in
           let tac_2 := (applicator f_2) in 
           solve_fAnd init_ tac_1 tac_2    
+        in 
+        tac
     | fAU ?f_1 ?f_2 => 
-          fun init_ => 
+          let tac init_ := 
             let tac_1 := (applicator f_1) in
             let tac_2 := (applicator f_2) in 
-            solve_fAU n init_ tac_1 tac_2    
+            solve_fAU n init_ tac_1 tac_2
+          in 
+          tac
     | fV ?n => solve_fV
     end in 
 lazymatch goal with
