@@ -382,7 +382,14 @@ solve_fAU 6 init_l tac1 tac2.
 Defined.
 
 
-
+Goal forall st: state model_square, 
+(init model_square) st -> 
+satisfies (model_square) (fAU (fOr(fV 0)(fV 1)) (fAX (fV 1))) st.
+intro.
+intro.
+intro.
+intro.
+intro.
 
 (* Theorem F1_unused: 
 forall st: state model_square, 
