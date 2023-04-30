@@ -1,0 +1,68 @@
+\ProvidesPackage{mdiss}
+
+\RequirePackage{graphicx}
+
+\def\mdiss@title{???}
+\def\mdiss@author{???}
+\def\mdiss@supervisor@title{???}
+\def\mdiss@supervisor@name{???}
+\edef\mdiss@year{\the\year}
+\def\mdiss@boss@title{???}
+\def\mdiss@boss@name{???}
+
+\def\mdissTitle#1{\def\mdiss@title{#1}}
+\def\mdissAuthor#1{\def\mdiss@author{#1}}
+\def\mdissSupervisorTitle#1{\def\mdiss@supervisor@title{#1}}
+\def\mdissSupervisorName#1{\def\mdiss@supervisor@name{#1}}
+\def\mdissYear#1{\def\mdiss@year{#1}}
+
+\newcommand\mdissPutTitleContents{%
+  \pagestyle{empty}%
+  \begin{center}% \linespread{1}%
+    \includegraphics{logo.jpg}
+    
+    Московский государственный университет имени М.\,В.~Ломоносова
+    
+    Факультет вычислительной математики и кибернетики
+    
+    Кафедра математической кибернетики
+  \end{center}%
+  \vfill%
+  \begin{center}%
+    \large%
+    \mdiss@author
+    
+    \vspace{.5cm}
+    
+    \Large
+    \textbf{\mdiss@title}
+  \end{center}%
+  \vfill
+  \begin{center}
+    МАГИСТЕРСКАЯ ДИССЕРТАЦИЯ
+  \end{center}
+  \vfill%
+  \vfill%
+  \begin{flushright}%
+    \begin{tabular}{@{}l@{}}
+      \textbf{Научный руководитель:} \\
+      \qquad
+      \begin{tabular}{@{}l@{}}
+        \mdiss@supervisor@title \\
+        \mdiss@supervisor@name
+      \end{tabular} \\
+    \end{tabular}
+  \end{flushright}%
+  \vfill%
+  \vfill%
+  \begin{center}%
+    Москва, \mdiss@year%
+  \end{center}%
+  \pagebreak
+  
+  \pagestyle{plain}
+  
+  \tableofcontents
+  
+  \pagebreak%
+}
